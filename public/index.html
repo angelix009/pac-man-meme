@@ -1883,7 +1883,7 @@ let ghostRespawnTime = 120;
     ctx.fillStyle = PACMAN_COLOR;
     ctx.font = 'bold 36px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('PAC-COIN', canvas.width / 2, canvas.height / 3);
+    ctx.fillText('Pac-Man', canvas.width / 2, canvas.height / 3);
     
     // Instructions
     ctx.fillStyle = 'white';
@@ -2538,7 +2538,7 @@ async function connectPhantomWallet() {
     try {
         // Vérifier si Phantom est installé
         if (!isPhantomInstalled()) {
-            alert("Phantom n'est pas installé. Veuillez installer l'extension Phantom Wallet pour continuer.");
+            alert("Phantom is not installed. Please install the Phantom Wallet extension to continue.");
             window.open("https://phantom.app/", "_blank");
             return null;
         }
