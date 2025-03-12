@@ -473,22 +473,24 @@ function checkGameInitialization() {
         
         /* Game container */
         .game-container {
-            position: relative;
-            width: 448px;
-            height: 496px;
-            margin: 20px auto;
-            background-color: #000;
-            border-radius: 10px;
-            overflow: hidden;
-            border: 4px solid #fd0;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-        }
+    position: relative;
+    width: 448px;
+    height: 496px;
+    margin: 20px auto;
+    background-color: #000;
+    border-radius: 10px;
+    border: 4px solid #fd0;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    overflow: visible; /* Important: permet aux éléments de déborder si nécessaire */
+  }
         
-        #game-canvas {
-            display: block;
-            background-color: #000;
-        }
-        
+  #game-canvas {
+    display: block;
+    width: 448px;
+    height: 496px;
+    background-color: #000;
+  }
+
         /* View Leaderboard button */
         .view-leaderboard {
             display: inline-block;
@@ -2700,9 +2702,10 @@ enhanceGameOverDetection();
 /* CSS optimisé pour un affichage sans défilement avec jeu centré */
 html, body {
     height: 100%;
-    overflow: hidden;
     margin: 0;
     padding: 0;
+    overflow-x: hidden; /* Empêche seulement le défilement horizontal */
+    overflow-y: auto; /* Permet le défilement vertical */
 }
 
 body {
@@ -2710,6 +2713,11 @@ body {
     flex-direction: column;
     min-height: 100vh;
 }
+
+/* Masquer la barre de défilement sur Firefox */
+
+
+/* Masquer la barre de défilement sur IE et Edge */
 
 .top-bar {
     flex: 0 0 auto;
@@ -2884,11 +2892,15 @@ body {
     display: block;
     margin: 0 auto;
 }
-
-/* Empêcher le défilement avec les flèches */
-.game-container {
-    touch-action: none;
+#game-canvas {
+    touch-action: none; /* limitez-le au canvas uniquement */
 }
+
+body, html {
+    overflow-y: auto !important;
+}
+/* Empêcher le défilement avec les flèches */
+
 
 /* Réduction de la taille de la section FOLLOW US */
 .follow-us-section {
@@ -3113,6 +3125,15 @@ const optimizedMobileCSS = `
   transform: translateY(-50%);
   border-radius: 8px 3px 3px 8px;
 }
+  body, html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: auto;
+}
+
+.main-content {
+    overscroll-behavior: contain;
+}
 
 /* Ajustements pour le mode paysage */
 @media (orientation: landscape) {
@@ -3125,9 +3146,6 @@ const optimizedMobileCSS = `
   /* Ajustement pour permettre de voir tout le jeu en mode paysage */
   @media (max-height: 450px) {
     .game-container {
-      max-height: 85vh !important;
-      width: auto !important;
-      max-width: 85vh !important;
     }
   }
 }
@@ -3145,7 +3163,6 @@ function optimizeMobileDisplay() {
   // Assurer que le viewport est correctement configuré
   const viewportMeta = document.querySelector('meta[name="viewport"]');
   if (viewportMeta) {
-    viewportMeta.content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no";
   }
   
   // Créer les contrôles directionnels
@@ -3188,27 +3205,29 @@ function createDirectionalControls() {
     button.setAttribute('data-direction', btn.direction);
     button.setAttribute('data-key', btn.keyCode);
     
-    // Événements tactiles
+    // Événements tactiles - SUPPRIMEZ e.preventDefault() ici
     button.addEventListener('touchstart', function(e) {
-      e.preventDefault();
+      // Ne pas utiliser e.preventDefault() ici
       this.style.backgroundColor = '#FF8C00';
       handleDirectionPress(btn.direction, btn.keyCode);
     });
     
     button.addEventListener('touchend', function(e) {
-      e.preventDefault();
+      // On peut laisser ce preventDefault car c'est spécifique au bouton
+      e.stopPropagation(); // Utilisez stopPropagation au lieu de preventDefault
       this.style.backgroundColor = 'rgba(255, 215, 0, 0.85)';
     });
     
     // Événements souris (pour tests)
     button.addEventListener('mousedown', function(e) {
-      e.preventDefault();
+      // Ne pas utiliser e.preventDefault() sur le document entier
+      e.stopPropagation();
       this.style.backgroundColor = '#FF8C00';
       handleDirectionPress(btn.direction, btn.keyCode);
     });
     
     button.addEventListener('mouseup', function(e) {
-      e.preventDefault();
+      e.stopPropagation();
       this.style.backgroundColor = 'rgba(255, 215, 0, 0.85)';
     });
     
@@ -3223,18 +3242,7 @@ function createDirectionalControls() {
 function handleDirectionPress(direction, keyCode) {
   console.log(`Direction pressée: ${direction} (${keyCode})`);
   
-  // Méthode 1: Simulation d'événement clavier
-  const event = new KeyboardEvent('keydown', {
-    key: keyCode,
-    code: keyCode,
-    keyCode: getKeyCode(keyCode),
-    which: getKeyCode(keyCode),
-    bubbles: true,
-    cancelable: true
-  });
-  document.dispatchEvent(event);
-  
-  // Méthode 2: Interaction directe avec les variables du jeu
+  // Méthode 2: Interaction directe avec les variables du jeu d'abord (plus fiable)
   if (typeof pacman !== 'undefined') {
     // Mettre à jour la direction
     pacman.nextDirection = direction;
@@ -3245,6 +3253,18 @@ function handleDirectionPress(direction, keyCode) {
       requestAnimationFrame(gameLoop);
     }
   }
+  
+  // Méthode 1: Simulation d'événement clavier en fallback
+  // Supprimer cancelable: true pour éviter que l'événement n'interfère avec le défilement
+  const event = new KeyboardEvent('keydown', {
+    key: keyCode,
+    code: keyCode,
+    keyCode: getKeyCode(keyCode),
+    which: getKeyCode(keyCode),
+    bubbles: true,
+    cancelable: false
+  });
+  document.dispatchEvent(event);
 }
 
 // Fonction pour obtenir le code numérique des touches
@@ -3319,5 +3339,18 @@ if (document.readyState === 'complete') {
 // Fonction utilitaire pour forcer l'optimisation mobile
 window.forceMobileOptimization = init;
     </script>
+    <style>.main-content {
+        overflow-y: scroll;
+        -webkit-overflow-scrolling: touch;
+    }
+    body, html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: auto;
+}
+
+.main-content {
+    overscroll-behavior: contain;
+}</style>
 </body>
 </html>
