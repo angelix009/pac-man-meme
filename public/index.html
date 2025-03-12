@@ -1,0 +1,3327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PacCoin | Play to Earn</title>
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <script>
+        // Check if the page is loaded in an environment that supports window
+        if (typeof window !== 'undefined') {
+            // Configuration for Solana
+            const solanaConfig = {
+                network: "mainnet-beta" // or "devnet" for development
+            };
+        }
+    </script>
+    <script>
+        const isPhantomInstalled = () => {
+            const provider = window?.solana;
+            return !!provider?.isPhantom;
+        };
+
+        // Function to connect Phantom
+        
+
+        // Function to get user's best score
+        async function getUserBestScore(wallet) {
+            try {
+                const response = await fetch(`/api/leaderboard/${wallet}`);
+                const data = await response.json();
+                
+                if (data && data.score) {
+                    // Update the message to show the player's best score
+                    const bestScoreMessage = `Your best score: ${data.score.toLocaleString()}. Can you beat it?`;
+                    document.querySelector('.message').textContent = bestScoreMessage;
+                }
+            } catch (error) {
+                console.error('Error fetching user score:', error);
+            }
+        }
+
+        // Function to save score to server
+        async function saveScoreToServer(wallet, score, level) {
+            try {
+                const response = await fetch('/api/score', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        wallet_address: wallet,
+                        score: score,
+                        level: level
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // If it's a new high score, show a message
+                if (data.isNewHighScore) {
+                    return { ...data, isNewHighScore: true };
+                }
+                
+                return data;
+            } catch (error) {
+                console.error('Error saving score to server:', error);
+                return { error: 'Failed to save score' };
+            }
+        }
+
+        // Add event listener to the connect button
+        document.addEventListener('DOMContentLoaded', () => {
+            const connectButton = document.querySelector('.connect-btn');
+            
+            if (connectButton) {
+                connectButton.addEventListener('click', connectPhantomWallet);
+            }
+            
+            // Add event listeners to nav items
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    // Remove active class from all items
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    // Add active class to clicked item
+                    this.classList.add('active');
+                    
+                    // Si l'onglet Score est cliqué, rediriger vers le leaderboard
+                    if (this.querySelector('.title').textContent === 'Score') {
+                        window.location.href = '/leaderboard';
+                    }
+                });
+            });
+            
+            // Si déjà connecté à Phantom, récupérer le score
+            if (isPhantomInstalled() && window.solana.isConnected) {
+                const publicKey = window.solana.publicKey.toString();
+                connectButton.textContent = publicKey.slice(0, 4) + '...' + publicKey.slice(-4);
+                connectButton.style.backgroundColor = 'rgb(255, 182, 8)';
+                document.querySelector('.message').textContent = "Play to earn PacCoins! Your score will be recorded.";
+                getUserBestScore(publicKey);
+            }
+        });
+
+        // Function to send the score to the blockchain (simulated)
+        // Function to send the score to the blockchain (simulated)
+async function saveScoreToBlockchain(score) {
+    try {
+        console.log("État du wallet:", {
+    installé: isPhantomInstalled(),
+    connecté: window.solana?.isConnected,
+    publicKey: window.solana?.publicKey?.toString()
+});
+        if (!isPhantomInstalled() || !window.solana.isConnected) {
+            alert("Please connect your Phantom wallet to save your score.");
+            return false;
+        }
+        
+        const wallet = window.solana.publicKey.toString();
+        // Récupérer le niveau actuel du jeu depuis la variable globale
+        const currentLevel = level; // Utiliser la variable globale level
+        
+        console.log(`Enregistrement du score ${score} pour le wallet ${wallet} au niveau ${currentLevel}`);
+        
+        // Transaction simulation (in a real implementation, you would use web3.js for Solana)
+        console.log("Saving score to blockchain:", score);
+        
+        // Enregistrer le score dans la base de données
+        const result = await saveScoreToServer(wallet, score, currentLevel);
+        
+        // Calculer les PacCoins gagnés
+        const pacCoinsEarned = Math.floor(score/100);
+        
+        // Afficher un message personnalisé en fonction du résultat
+        if (result && result.isNewHighScore) {
+            document.querySelector('.message').textContent = `New high score: ${score}! Can you do better?`;
+        } else {
+        }
+        
+        return true;
+    } catch (error) {
+        console.error("Error saving score:", error);
+        alert("Error saving score: " + error.message);
+        return false;
+    }
+}
+
+// Remplacez les deux fonctions problématiques par ce code
+function checkGameInitialization() {
+    console.log("Surveillance du jeu initialisée");
+    
+    // Attendre quelques secondes pour l'initialisation du jeu
+    setTimeout(() => {
+        // Créer un observateur d'état pour la variable gameOver
+        let gameOverObserver = setInterval(() => {
+            // Vérifier si le jeu a été initialisé et si gameOver est true
+            if (typeof gameOver !== 'undefined' && gameOver === true) {
+                console.log("Partie terminée détectée! Score:", score);
+                
+                // Sauvegarder le score
+                if (window.solana && window.solana.isConnected) {
+                    saveScoreToBlockchain(score);
+                } else {
+                    console.log("Wallet non connecté, score non sauvegardé");
+                    // Ajouter un bouton pour connecter le wallet
+                    const leaderboardLink = document.createElement('div');
+                    leaderboardLink.innerHTML = `
+                        <div style="position: absolute; bottom: 30px; left: 0; right: 0; text-align: center;">
+                            <button style="background-color: #fd0; color: black; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;" onclick="connectPhantomWallet()">
+                                Connect Wallet to Save Score
+                            </button>
+                        </div>
+                    `;
+                    document.querySelector('.game-container').appendChild(leaderboardLink);
+                }
+                
+                // Arrêter l'observateur après avoir détecté gameOver
+                clearInterval(gameOverObserver);
+                
+                // Réinitialiser l'observateur après 5 secondes pour la prochaine partie
+                setTimeout(() => {
+                    checkGameInitialization();
+                }, 5000);
+            }
+        }, 1000); // Vérifier toutes les secondes
+    }, 3000); // Attendre 3 secondes pour l'initialisation du jeu
+}
+
+// Lancer la surveillance au chargement de la page
+
+// Supprimer ou commenter ces lignes pour éviter les messages d'erreur
+// function modifyGameOverFunction() { ... }
+// setTimeout(modifyGameOverFunction, 2000);
+
+    </script>
+    <style>
+        /* Reset styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            color: black;
+            overflow-x: hidden;
+        }
+        
+        /* Top bar */
+        .top-bar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 5px 20px;
+            background-color: #000;
+            color: white;
+            font-size: 14px;
+        }
+        
+        .share-section, .language-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: 20px;
+        }
+        
+        .social-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.social-icon img {
+    object-fit: contain;  /* Maintient les proportions tout en s'adaptant */
+}
+        .social-icon:hover {
+            opacity: 1;
+        }
+        
+        /* Main header */
+        .main-header {
+            display: flex;
+            background: #fff;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* Logo section */
+        .logo-section {
+            display: flex;
+            align-items: center;
+            padding: 10px 0px;
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo {
+            height: 60px;
+        }
+        
+        .site-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #000;
+            margin-left: 10px;
+            text-transform: uppercase;
+        }
+        
+        /* Navigation */
+        .main-nav {
+            display: flex;
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+        }
+        .main-nav2 {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+        
+        .nav-items {
+            display: flex;
+            list-style: none;
+            height: 100%;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 90px;
+            padding: 15px;
+            text-align: center;
+            color: #000;
+            text-decoration: none;
+            font-weight: bold;
+            height: 100%;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .nav-item .icon {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 5px;
+            object-fit: contain;
+        }
+        .icon2 {
+            width: 35px;
+            height: 35px;
+            margin-bottom: 1px;
+            object-fit: contain;
+        }
+        .nav-item .title {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .nav-item .subtitle {
+            font-size: 12px;
+            color: #666;
+            margin-top: 2px;
+        }
+        
+        .nav-item:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .nav-item.active {
+            color: #00a8ff;
+        }
+        
+        .nav-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: #fd0;
+        }
+        
+        /* Connect wallet button */
+        .connect-btn {
+            background-color: #fd0;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            margin-right: 20px;
+            transition: all 0.3s;
+        }
+        
+        .connect-btn:hover {
+            background-color: #ffea00;
+            transform: translateY(-2px);
+        }
+        
+        /* Main content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        
+        /* Contract address */
+        .contract-address {
+            background: #000;
+            border: 2px solid #fd0;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin: 20px auto;
+            max-width: 600px;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            color: white;
+        }
+        
+        .contract-address:hover {
+            background-color: #222;
+            transform: translateY(-2px);
+        }
+        
+        .address-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .address-label {
+            font-weight: 500;
+            margin-right: 10px;
+            color: #fd0;
+        }
+        
+        .address-value {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            opacity: 0.9;
+        }
+        
+        .copy-icon {
+            margin-left: 10px;
+            opacity: 0.7;
+            color: #fd0;
+        }
+        
+        .copy-icon:hover {
+            opacity: 1;
+        }
+        
+        .address-rainbow {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(to right, #fd0, #f00, #00f);
+            opacity: 0.7;
+            transition: opacity 0.3s;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
+        
+        .contract-address:hover .address-rainbow {
+            opacity: 1;
+        }
+        
+        /* Game message */
+        .message {
+            text-align: center;
+            font-size: 24px;
+            margin: 20px 0;
+            animation: bounce 1s infinite alternate;
+            max-width: 800px;
+            color: #333;
+            font-weight: bold;
+            text-shadow: 1px 1px 0 #fd0;
+        }
+        
+        @keyframes bounce {
+            from {
+                transform: translateY(0);
+            }
+            to {
+                transform: translateY(-10px);
+            }
+        }
+        
+        /* Game container */
+        .game-container {
+            position: relative;
+            width: 448px;
+            height: 496px;
+            margin: 20px auto;
+            background-color: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 4px solid #fd0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        #game-canvas {
+            display: block;
+            background-color: #000;
+        }
+        
+        /* View Leaderboard button */
+        .view-leaderboard {
+            display: inline-block;
+            background-color: #fd0;
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-weight: bold;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .view-leaderboard:hover {
+            background-color: #ffea00;
+            transform: translateY(-2px);
+        }
+        
+        /* Footer */
+        footer {
+            background-color: #000;
+            width: 100%;
+            padding: 20px 0;
+            color: white;
+            margin-top: 30px;
+        }
+        
+        .footer-content {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 0 20px;
+        }
+        
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fd0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+            .main-nav {
+                flex-wrap: wrap;
+            }
+            
+            .nav-items {
+                flex-wrap: wrap;
+            }
+            
+            .nav-item {
+                flex-basis: 50%;
+            }
+            
+            .game-container {
+                width: 336px;
+                height: 372px;
+            }
+            
+            #game-canvas {
+                width: 336px;
+                height: 372px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar with sharing options and language selector -->
+    <div class="top-bar">
+        <div class="share-section">
+            SHARE
+            <a href="#" aria-label="Facebook">
+                <svg class="social-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                </svg>
+            </a>
+            <a href="#" aria-label="Twitter">
+                <svg class="social-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path>
+                </svg>
+            </a>
+        </div>
+        <div class="language-section">
+            LANGUAGE
+            <span style="font-weight: bold">EN / JP</span>
+        </div>
+    </div>
+    
+    <!-- Main Header with Logo and Navigation -->
+    <header class="main-header">
+        <!-- Logo Section -->
+        <div class="logo-section">
+            <div class="logo-container">
+                <!-- Replace with your actual logo image -->
+                <img src="images/coin.png" alt="PacCoin Logo" class="logo">
+            </div>
+        </div>
+        
+        <!-- Main Navigation -->
+        <nav class="main-nav">
+            <ul class="nav-items">
+                <li>
+                    <a href="#" class="nav-item">
+                        <!-- Replace with your actual icon images -->
+                        <img src="https://www.pacman.com/images/common/ico_news.png" alt="Swap" class="icon">
+                        <span class="title">Swap</span>
+                        <span class="subtitle">Swap to Earn</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-item">
+                        <img src="https://www.pacman.com/images/common/ico_goods.png" alt="Stake" class="icon">
+                        <span class="title">Stake</span>
+                        <span class="subtitle">Stake to Earn</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-item active">
+                        <img src="https://www.pacman.com/images/common/ico_games.png" alt="Game" class="icon">
+                        <span class="title">Game</span>
+                        <span class="subtitle">Play to Earn</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/leaderboard" class="nav-item">
+                        <img src="https://www.pacman.com/images/common/ico_history.png" alt="Score" class="icon">
+                        <span class="title">Score</span>
+                        <span class="subtitle">Claim to Earn</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-item">
+                        <img src="https://www.pacman.com/images/common/ico_footer_02.png" alt="Referral" class="icon2">
+                        <span class="title">Referral</span>
+                        <span class="subtitle">Refer to Earn</span>
+                    </a>
+                </li>
+            </ul>
+        </nav >
+
+        <nav class="main-nav2" >
+         <button class="connect-btn">Connect</button>
+        </nav>
+    </header>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Contract Address -->
+        <div class="contract-address">
+            <div class="address-content">
+                <span class="address-label">CA:</span>
+                <span class="address-value">capacman</span>
+                <span class="copy-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                </span>
+            </div>
+            <div class="address-rainbow"></div>
+        </div>
+        
+        <!-- Game Message -->
+        <p class="message">Connect your wallet to save your score and claim rewards.</p>
+        
+        <!-- Game Container -->
+        <div class="game-container">
+            <canvas id="game-canvas" width="448" height="496"></canvas>
+            
+        </div>
+        
+        
+        <!-- View Leaderboard Button -->
+        <a href="/leaderboard" class="view-leaderboard">View Leaderboard</a>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="pacman-footer">
+        <!-- Section Follow Us -->
+        <div class="follow-us-section">
+            <div class="follow-us-content">
+                <img src="https://www.pacman.com/images/top/tit_follow.png" alt="FOLLOW US" class="follow-us-title">
+                
+                <div class="social-icons">
+                    <a href="#" class="social-icon">
+                        <img src="images/telegram.png" alt="Telegram">
+                    </a>
+                    <a href="#" class="social-icon">
+                        <img src="https://www.pacman.com/images/top/icon_x.png" alt="Twitter">
+                    </a>
+                </div>
+            </div>
+        </div>
+    
+        <!-- Yellow Bar with Icons -->
+        <div class="pac-bar">
+            <img src="https://www.pacman.com/images/common/ico_footer_02.png" alt="Ghost" class="ghost-icon">
+            <span class="copyright">PacCoin™ © 2025 PacCoin Entertainment Inc.</span>
+            <img src="https://www.pacman.com/images/common/ico_footer_01.png" alt="Ghost" class="ghost-icon">
+        </div>
+    
+        <!-- Company Logo -->
+        <div class="company-logo">
+            <div class="copyright-small">©PacCoin Entertainment Inc.</div>
+        </div>
+    </footer>
+    
+    <style>
+    /* Footer Styles */
+    .pacman-footer {
+        background-image: url('https://www.pacman.com/images/common/bg_common.jpg');
+        background-color: #000;
+        color: white;
+        padding: 0;
+        font-family: Arial, sans-serif;
+        position: relative;
+    }
+    
+    /* Follow Us Section */
+    .follow-us-section {
+        background-color: #fff;
+        border-radius: 30px;
+        padding: 30px;
+        margin: 30px auto;
+        max-width: 800px;
+        text-align: center;
+        position: relative;
+        z-index: 1;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .follow-us-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 25px;
+    }
+    
+    .follow-us-title {
+        max-width: 300px;
+        margin-bottom: 10px;
+    }
+    
+    .social-icons {
+        display: flex;
+        justify-content: center;
+        gap: 50px;  /* Increased spacing between icons */
+    }
+    
+
+    .social-icon:hover {
+    }
+    
+    .social-icon img {
+        width: 60px;  /* Larger icons */
+        height: 60px;
+        transition: transform 0.3s ease;
+    }
+    
+    .social-icon:hover img {
+        transform: scale(1.05);
+    }
+    
+    /* Yellow Bar with Ghosts */
+    .pac-bar {
+        background-color: #fd0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 15px 0;
+        margin-top: 20px;
+    }
+    
+    .ghost-icon {
+        animation: float 3s infinite alternate ease-in-out;
+    }
+    
+    @keyframes float {
+        0% { transform: translateY(0); }
+        100% { transform: translateY(-5px); }
+    }
+    
+    .ghost-icon:nth-child(1) {
+        animation-delay: 0.5s;
+    }
+    
+    .copyright {
+        color: #000;
+        font-size: 16px;
+        font-weight: bold;
+        margin: 0 15px;
+    }
+    
+    /* Footer Links */
+    .footer-links {
+        background-color: #f5f5f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 20px 0;
+        gap: 30px;
+    }
+    
+    .footer-links a {
+        color: #333;
+        text-decoration: none;
+        font-size: 15px;
+        position: relative;
+        transition: color 0.2s;
+    }
+    
+    .footer-links a:hover {
+        color: #fd0;
+    }
+    
+    .footer-links a:after {
+        content: "";
+        position: absolute;
+        width: 0;
+        height: 2px;
+        bottom: -3px;
+        left: 0;
+        background-color: #fd0;
+        transition: width 0.3s;
+    }
+    
+    .footer-links a:hover:after {
+        width: 100%;
+    }
+    
+    /* Company Logo */
+    .company-logo {
+        background-color: #f5f5f5;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 15px 0 25px;
+        border-top: 1px solid #eee;
+    }
+    
+    .company-logo img {
+        max-width: 150px;
+        margin-bottom: 15px;
+    }
+    
+    .copyright-small {
+        font-size: 13px;
+        color: #666;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .social-icons {
+            gap: 30px;
+        }
+        
+        .social-icon img {
+            width: 50px;
+            height: 50px;
+        }
+        
+        .pac-bar {
+            flex-wrap: wrap;
+        }
+        
+        .ghost-icon {
+            margin: 5px 15px;
+        }
+        
+        .copyright {
+            width: 100%;
+            text-align: center;
+            margin: 10px 0;
+        }
+        
+        .footer-links {
+            padding: 15px;
+            gap: 20px;
+        }
+    }
+    </style>
+    <script>
+        // Attendre que la page soit complètement chargée
+        window.onload = function() {
+            // Canvas setup
+            const canvas = document.getElementById('game-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Game constants
+            const CELL_SIZE = 16;
+            const WALL_COLOR = '#2121ff';
+            const DOT_COLOR = '#ffb8ae';
+            const POWERUP_COLOR = '#ffb8ae';
+            const PACMAN_COLOR = '#ffff00';
+            const GHOST_COLORS = ['#ff0000', '#ffb8ff', '#00ffff', '#ffb851'];
+            const GHOST_FRIGHTENED_COLOR = '#2121ff';
+            const SCORE_COLOR = '#ffffff';
+            
+            // Game state
+            let gameStarted = false;
+            let gameOver = false;
+            let score = 0;
+            let highScore = localStorage.getItem('pacmanHighScore') || 0;
+            let level = 1;
+            let lives = 3;
+            let dotsLeft = 0;
+            let powerupActive = false;
+            let powerupTimer = 0;
+            let ghostsEaten = 0;
+            
+            // Define directions
+            const UP = 0;
+            const RIGHT = 1;
+            const DOWN = 2;
+            const LEFT = 3;
+            
+            // Pac-Man state
+            const pacman = {
+                x: 13.5 * CELL_SIZE,
+                y: 23 * CELL_SIZE,
+                direction: LEFT,
+                nextDirection: LEFT,
+                speed: 2,
+                mouthOpen: 0,
+                mouthDir: 1,
+                radius: CELL_SIZE / 2,
+                alive: true,
+                deathFrame: 0
+            };
+            
+            // Ghost class
+            class Ghost {
+                constructor(x, y, color, index) {
+                    this.x = x * CELL_SIZE;
+                    this.y = y * CELL_SIZE;
+                    this.homeX = x * CELL_SIZE;
+                    this.homeY = y * CELL_SIZE;
+                    this.color = color;
+                    this.direction = Math.floor(Math.random() * 4);
+                    this.speed = 1.5;
+                    this.frightened = false;
+                    this.eaten = false;
+                    this.inBox = true;
+                    this.releaseTimer = index * 5 * 60; // Staggered release
+                    this.index = index;
+                }
+                
+                reset() {
+                    this.x = this.homeX;
+                    this.y = this.homeY;
+                    this.direction = Math.floor(Math.random() * 4);
+                    this.frightened = false;
+                    this.eaten = false;
+                    this.inBox = true;
+                    this.releaseTimer = this.index * 5 * 60;
+                }
+            }
+            
+            // Create ghosts
+            const ghosts = [
+                new Ghost(13.5, 11, GHOST_COLORS[0], 0), // Red ghost (Blinky)
+                new Ghost(11.5, 14, GHOST_COLORS[1], 1), // Pink ghost (Pinky)
+                new Ghost(13.5, 14, GHOST_COLORS[2], 2), // Cyan ghost (Inky)
+                new Ghost(15.5, 14, GHOST_COLORS[3], 3)  // Orange ghost (Clyde)
+            ];
+            
+            // Maze layout
+            const maze = [
+                [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                [1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+                [1,3,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,3,1],
+                [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                [1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,0,1],
+                [1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,0,1],
+                [1,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1],
+                [1,1,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1],
+                [1,1,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1],
+                [1,1,1,1,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,0,1,1,1,1,1,1],
+                [1,1,1,1,1,1,0,1,1,0,1,1,1,2,2,1,1,1,0,1,1,0,1,1,1,1,1,1],
+                [1,1,1,1,1,1,0,1,1,0,1,2,2,2,2,2,2,1,0,1,1,0,1,1,1,1,1,1],
+                [0,0,0,0,0,0,0,0,0,0,1,2,2,2,2,2,2,1,0,0,0,0,0,0,0,0,0,0],
+                [1,1,1,1,1,1,0,1,1,0,1,2,2,2,2,2,2,1,0,1,1,0,1,1,1,1,1,1],
+                [1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1],
+                [1,1,1,1,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,0,1,1,1,1,1,1],
+                [1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1],
+                [1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1],
+                [1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+                [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+                [1,3,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,3,1],
+                [1,1,1,0,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,1],
+                [1,1,1,0,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,1],
+                [1,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1],
+                [1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1],
+                [1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1],
+                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+            ];
+            
+            // Load maze
+            function loadMaze() {
+    // Définition originale du labyrinthe
+    const originalMaze = [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+        [1,3,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,3,1],
+        [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,0,1],
+        [1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,0,1],
+        [1,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1],
+        [1,1,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1],
+        [1,1,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1],
+        [1,1,1,1,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,0,1,1,1,1,1,1],
+        [1,1,1,1,1,1,0,1,1,0,1,1,1,2,2,1,1,1,0,1,1,0,1,1,1,1,1,1],
+        [1,1,1,1,1,1,0,1,1,0,1,2,2,2,2,2,2,1,0,1,1,0,1,1,1,1,1,1],
+        [0,0,0,0,0,0,0,0,0,0,1,2,2,2,2,2,2,1,0,0,0,0,0,0,0,0,0,0],
+        [1,1,1,1,1,1,0,1,1,0,1,2,2,2,2,2,2,1,0,1,1,0,1,1,1,1,1,1],
+        [1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1],
+        [1,1,1,1,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,0,1,1,1,1,1,1],
+        [1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1],
+        [1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+        [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+        [1,3,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,3,1],
+        [1,1,1,0,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,1],
+        [1,1,1,0,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,1],
+        [1,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1],
+        [1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1],
+        [1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ];
+    
+    // Réinitialiser le labyrinthe à son état original
+    for (let y = 0; y < maze.length; y++) {
+        for (let x = 0; x < maze[y].length; x++) {
+            maze[y][x] = originalMaze[y][x];
+        }
+    }
+    
+    // Compter le nombre de points à manger
+    dotsLeft = 0;
+    for (let y = 0; y < maze.length; y++) {
+        for (let x = 0; x < maze[y].length; x++) {
+            if (maze[y][x] === 0 || maze[y][x] === 3) { // Points réguliers ou power-ups
+                dotsLeft++;
+            }
+        }
+    }
+    
+    console.log("Labyrinthe rechargé! Nombre de points à manger:", dotsLeft);
+}
+            
+            // Initialize the game
+            function init() {
+                try {
+                    // Clear the canvas before drawing
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    
+                    loadMaze();
+                    resetGame();
+                    draw();
+                    
+                    // Event listeners
+                    document.addEventListener('keydown', handleKeyDown);
+                    canvas.addEventListener('click', handleClick);
+                    
+                    // Start game loop
+                    if (!gameStarted) {
+                        drawStartScreen();
+                    }
+                    
+                    console.log("Game initialized successfully");
+                } catch (error) {
+                    console.error("Error initializing game:", error);
+                }
+            }
+            
+            // Handle keyboard input
+            function handleKeyDown(e) {
+                if (!gameStarted) {
+                    gameStarted = true;
+                    requestAnimationFrame(gameLoop);
+                    return;
+                }
+                
+                if (gameOver) {
+                    resetGame();
+                    return;
+                }
+                
+                switch(e.key) {
+                    case 'ArrowUp':
+                        pacman.nextDirection = UP;
+                        break;
+                    case 'ArrowRight':
+                        pacman.nextDirection = RIGHT;
+                        break;
+                    case 'ArrowDown':
+                        pacman.nextDirection = DOWN;
+                        break;
+                    case 'ArrowLeft':
+                        pacman.nextDirection = LEFT;
+                        break;
+                }
+            }
+            
+            // Handle canvas clicks
+            function handleClick(e) {
+                if (!gameStarted) {
+                    gameStarted = true;
+                    requestAnimationFrame(gameLoop);
+                    return;
+                }
+                
+                if (gameOver) {
+                    resetGame();
+                    return;
+                }
+                
+                // Get click position relative to canvas
+                const rect = canvas.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const clickY = e.clientY - rect.top;
+                
+                // Calculate direction based on click position relative to Pac-Man
+                const dx = clickX - pacman.x;
+                const dy = clickY - pacman.y;
+                
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    pacman.nextDirection = dx > 0 ? RIGHT : LEFT;
+                } else {
+                    pacman.nextDirection = dy > 0 ? DOWN : UP;
+                }
+            }
+            
+            // Reset game state
+            function resetGame() {
+                score = 0;
+                level = 1;
+                lives = 3;
+                loadMaze();
+                resetEntities();
+                gameOver = false;
+                powerupActive = false;
+                powerupTimer = 0;
+                ghostsEaten = 0;
+                levelCompleted = false;
+            }
+            
+            // Reset entities
+            function resetEntities() {
+                pacman.x = 13.5 * CELL_SIZE;
+                pacman.y = 23 * CELL_SIZE;
+                pacman.direction = LEFT;
+                pacman.nextDirection = LEFT;
+                pacman.alive = true;
+                pacman.deathFrame = 0;
+                
+                ghosts.forEach(ghost => ghost.reset());
+            }
+            
+            // Check if Pac-Man can move in the specified direction
+            function canMove(x, y, direction) {
+                const gridX = Math.floor(x / CELL_SIZE);
+                const gridY = Math.floor(y / CELL_SIZE);
+                
+                switch(direction) {
+                    case UP:
+                        return maze[gridY - 1] && maze[gridY - 1][gridX] !== 1;
+                    case RIGHT:
+                        return maze[gridY][gridX + 1] !== 1;
+                    case DOWN:
+                        return maze[gridY + 1] && maze[gridY + 1][gridX] !== 1;
+                    case LEFT:
+                        return maze[gridY][gridX - 1] !== 1;
+                }
+                return false;
+            }
+            
+            // Move Pac-Man
+            // Remplacez la fonction movePacMan actuelle par celle-ci
+            // Solution très simplifiée pour le tunnel
+// Fonction movePacMan avec débogage complet
+// Solution ultra-simplifiée pour le tunnel
+function movePacMan() {
+    if (!pacman.alive) return;
+    
+    // Vérifier si Pac-Man peut changer de direction
+    if (pacman.nextDirection !== pacman.direction) {
+        if (canMove(pacman.x, pacman.y, pacman.nextDirection)) {
+            pacman.direction = pacman.nextDirection;
+        }
+    }
+    
+    // Déterminer nouvelle position basée sur la direction
+    let newX = pacman.x;
+    let newY = pacman.y;
+    
+    switch(pacman.direction) {
+        case UP:
+            newY -= pacman.speed;
+            break;
+        case RIGHT:
+            newX += pacman.speed;
+            break;
+        case DOWN:
+            newY += pacman.speed;
+            break;
+        case LEFT:
+            newX -= pacman.speed;
+            break;
+    }
+    
+    // SOLUTION DIRECTE POUR LE TUNNEL
+    // Vérifier spécifiquement la ligne 14 où se trouve le tunnel
+    if (Math.floor(pacman.y / CELL_SIZE) === 14) {
+        // Vérifier les sorties à droite ou à gauche (indépendamment de la direction)
+        if (newX < 0) {
+            pacman.x = canvas.width - pacman.speed;
+            updatePacmanMouth();
+            checkCollisions();
+            return;
+        }
+        
+        if (newX > canvas.width) {
+            pacman.x = pacman.speed;
+            updatePacmanMouth();
+            checkCollisions();
+            return;
+        }
+    }
+    
+    // Vérification standard de collision avec les murs
+    const gridX = Math.floor(newX / CELL_SIZE);
+    const gridY = Math.floor(newY / CELL_SIZE);
+    
+    if (gridX >= 0 && gridX < maze[0].length && gridY >= 0 && gridY < maze.length) {
+        if (maze[gridY][gridX] !== 1) { // Si ce n'est pas un mur
+            pacman.x = newX;
+            pacman.y = newY;
+        }
+    }
+    
+    // Animation de la bouche
+    updatePacmanMouth();
+    
+    // Vérification des collisions
+    checkCollisions();
+}
+
+// Version simplifiée pour les fantômes
+
+
+// Fonction auxiliaire pour l'animation de la bouche
+function updatePacmanMouth() {
+    pacman.mouthOpen += 0.1 * pacman.mouthDir;
+    if (pacman.mouthOpen >= 0.5) {
+        pacman.mouthDir = -1;
+    } else if (pacman.mouthOpen <= 0) {
+        pacman.mouthDir = 1;
+    }
+}
+// Pour plus de cohérence, nous allons également mettre à jour la fonction moveGhosts()
+
+            
+            // Move ghosts
+            function moveGhosts() {
+                ghosts.forEach(ghost => {
+                    // If ghost is in box, handle release timer
+                    if (ghost.inBox) {
+                        ghost.releaseTimer--;
+                        if (ghost.releaseTimer <= 0) {
+                            ghost.inBox = false;
+                            ghost.y = 11 * CELL_SIZE; // Position at ghost house exit
+                        } else {
+                            // Bounce up and down in ghost house
+                            ghost.y += Math.sin(Date.now() / 200) * 0.5;
+                            return;
+                        }
+                    }
+                    
+                    // If ghost is eaten, return to ghost house
+                    if (ghost.eaten) {
+                        // Move towards ghost house
+                        const homeX = 13.5 * CELL_SIZE;
+                        const homeY = 14 * CELL_SIZE;
+                        
+                        // Calculate direction to home
+                        const dx = homeX - ghost.x;
+                        const dy = homeY - ghost.y;
+                        
+                        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) {
+                            ghost.x = ghost.homeX;
+                            ghost.y = ghost.homeY;
+                            ghost.eaten = false;
+                            ghost.inBox = true;
+                            ghost.releaseTimer = ghostRespawnTime; // 2 seconds
+                            return;
+                        }
+                        
+                        // Move towards home
+                        ghost.x += Math.sign(dx) * ghost.speed * 2;
+                        ghost.y += Math.sign(dy) * ghost.speed * 2;
+                        return;
+                    }
+                    
+                    // Regular ghost movement
+                    let possibleDirections = [];
+                    const oppositeDirection = (ghost.direction + 2) % 4;
+                    
+                    // Check all four directions
+                    for (let dir = 0; dir < 4; dir++) {
+                        if (dir !== oppositeDirection && canMove(ghost.x, ghost.y, dir)) {
+                            possibleDirections.push(dir);
+                        }
+                    }
+                    
+                    // If at intersection or forced to turn
+                    if (possibleDirections.length > 0 && 
+                        (possibleDirections.length > 1 || !canMove(ghost.x, ghost.y, ghost.direction))) {
+                        
+                        if (!ghost.frightened) {
+                            // Target based on ghost behavior
+                            let targetX, targetY;
+                            
+                            if (ghost.index === 0) { // Red ghost (Blinky) - chase Pac-Man directly
+                                targetX = pacman.x;
+                                targetY = pacman.y;
+                            } else if (ghost.index === 1) { // Pink ghost (Pinky) - target 4 cells ahead of Pac-Man
+                                targetX = pacman.x;
+                                targetY = pacman.y;
+                                
+                                switch(pacman.direction) {
+                                    case UP:
+                                        targetY -= 4 * CELL_SIZE;
+                                        break;
+                                    case RIGHT:
+                                        targetX += 4 * CELL_SIZE;
+                                        break;
+                                    case DOWN:
+                                        targetY += 4 * CELL_SIZE;
+                                        break;
+                                    case LEFT:
+                                        targetX -= 4 * CELL_SIZE;
+                                        break;
+                                }
+                            } else if (ghost.index === 2) { // Cyan ghost (Inky) - complex targeting
+                                // Position relative to Blinky and Pac-Man
+                                const blinky = ghosts[0];
+                                
+                                // Get position 2 tiles ahead of Pac-Man
+                                let aheadX = pacman.x;
+                                let aheadY = pacman.y;
+                                
+                                switch(pacman.direction) {
+                                    case UP:
+                                        aheadY -= 2 * CELL_SIZE;
+                                        break;
+                                    case RIGHT:
+                                        aheadX += 2 * CELL_SIZE;
+                                        break;
+                                    case DOWN:
+                                        aheadY += 2 * CELL_SIZE;
+                                        break;
+                                    case LEFT:
+                                        aheadX -= 2 * CELL_SIZE;
+                                        break;
+                                }
+                                
+                                // Vector from Blinky to the position ahead of Pac-Man
+                                let vectorX = aheadX - blinky.x;
+                                let vectorY = aheadY - blinky.y;
+                                
+                                // Double the vector
+                                targetX = blinky.x + vectorX * 2;
+                                targetY = blinky.y + vectorY * 2;
+                                
+                            } else { // Orange ghost (Clyde) - chase or retreat
+                                const distToPacman = Math.hypot(ghost.x - pacman.x, ghost.y - pacman.y);
+                                
+                                if (distToPacman > 8 * CELL_SIZE) {
+                                    // Chase mode - target Pac-Man
+                                    targetX = pacman.x;
+                                    targetY = pacman.y;
+                                } else {
+                                    // Scatter mode - go to bottom-left corner
+                                    targetX = 0;
+                                    targetY = canvas.height;
+                                }
+                            }
+                            
+                            // Find the direction that gets closest to the target
+                            let bestDirection = possibleDirections[0];
+                            let bestDistance = Infinity;
+                            
+                            possibleDirections.forEach(dir => {
+                                let nextX = ghost.x;
+                                let nextY = ghost.y;
+                                
+                                switch(dir) {
+                                    case UP:
+                                        nextY -= CELL_SIZE;
+                                        break;
+                                    case RIGHT:
+                                        nextX += CELL_SIZE;
+                                        break;
+                                    case DOWN:
+                                        nextY += CELL_SIZE;
+                                        break;
+                                    case LEFT:
+                                        nextX -= CELL_SIZE;
+                                        break;
+                                }
+                                
+                                const distance = Math.hypot(nextX - targetX, nextY - targetY);
+                                if (distance < bestDistance) {
+                                    bestDistance = distance;
+                                    bestDirection = dir;
+                                }
+                            });
+                            
+                            ghost.direction = bestDirection;
+                        } else {
+                            // Frightened mode - random movement
+                            ghost.direction = possibleDirections[Math.floor(Math.random() * possibleDirections.length)];
+                        }
+                    }
+                    
+                    // Move ghost
+                    switch(ghost.direction) {
+                        case UP:
+                            ghost.y -= ghost.speed * (ghost.frightened ? 0.5 : 1);
+                            break;
+                        case RIGHT:
+                            ghost.x += ghost.speed * (ghost.frightened ? 0.5 : 1);
+                            break;
+                        case DOWN:
+                            ghost.y += ghost.speed * (ghost.frightened ? 0.5 : 1);
+                            break;
+                        case LEFT:
+                            ghost.x -= ghost.speed * (ghost.frightened ? 0.5 : 1);
+                            break;
+                    }
+                    
+                    // Check for tunnel wrap
+                    if (ghost.x < 0) {
+                        ghost.x = canvas.width;
+                    } else if (ghost.x > canvas.width) {
+                        ghost.x = 0;
+                    }
+                });
+            }
+            
+            function checkCollisions() {
+    const gridX = Math.floor(pacman.x / CELL_SIZE);
+    const gridY = Math.floor(pacman.y / CELL_SIZE);
+    
+    if (gridX >= 0 && gridX < maze[0].length && gridY >= 0 && gridY < maze.length) {
+        if (maze[gridY][gridX] === 0) { // Regular dot
+            maze[gridY][gridX] = 4; // Mark as eaten
+            score += 10;
+            dotsLeft--;
+            console.log("Points restants:", dotsLeft);
+        } else if (maze[gridY][gridX] === 3) { // Power-up
+            maze[gridY][gridX] = 4; // Mark as eaten
+            score += 50;
+            dotsLeft--;
+            console.log("Points restants:", dotsLeft);
+            
+            // Activate power-up
+            powerupActive = true;
+            powerupTimer = powerupDuration;
+            ghostsEaten = 0;
+        
+            
+            // Make ghosts frightened
+            ghosts.forEach(ghost => {
+                if (!ghost.eaten) {
+                    ghost.frightened = true;
+                    // Reverse direction
+                    ghost.direction = (ghost.direction + 2) % 4;
+                }
+            });
+        }
+    }
+    
+    // Check for ghost collisions
+    ghosts.forEach(ghost => {
+        if (!ghost.inBox && !ghost.eaten) {
+            const distance = Math.hypot(ghost.x - pacman.x, ghost.y - pacman.y);
+            
+            if (distance < CELL_SIZE) {
+                if (ghost.frightened) {
+                    ghost.eaten = true;
+                    ghost.frightened = false;
+                    ghostsEaten++;
+                    const ghostScore = Math.pow(2, ghostsEaten) * 100;
+                    score += ghostScore;
+                    
+                } else {
+                    // Pac-Man dies
+                    pacman.alive = false;
+                    lives--;
+                    
+                    setTimeout(() => {
+                        if (lives <= 0) {
+                            gameOver = true;
+                            
+                            // Update high score
+                            if (score > highScore) {
+                                highScore = score;
+                                localStorage.setItem('pacmanHighScore', highScore);
+                            }
+                        } else {
+                            resetEntities();
+                        }
+                    }, 2000); // Delay before respawning or game over
+                }
+            }
+        }
+    });
+    
+    // Check if all dots are eaten
+    if (dotsLeft <= 0) {
+        // Ajout d'un délai avant de passer au niveau suivant
+        // et d'un drapeau pour éviter les appels multiples
+        if (!levelCompleted) {
+            levelCompleted = true;
+            console.log("Niveau terminé! Passage au niveau suivant...");
+            setTimeout(() => {
+                level++;
+                levelCompleted = false;
+                loadMaze(); // Recharger le labyrinthe pour le niveau suivant
+                resetEntities(); // Réinitialiser les entités
+                pacman.speed += 0.1; // Increase speed with each level
+                ghosts.forEach(ghost => ghost.speed += 0.1);
+            }, 2000); // Délai de 2 secondes avant le prochain niveau
+        }
+    }
+}
+
+function adjustDifficultyForLevel() {
+    // Vitesse de base
+    const baseSpeed = 2;
+    const baseGhostSpeed = 1.5;
+    
+    // Ajustement de la vitesse en fonction du niveau
+    pacman.speed = baseSpeed + (level - 1) * 0.2;
+    
+    // Les fantômes deviennent plus rapides que Pac-Man dans les niveaux avancés
+    const ghostSpeedMultiplier = 1 + Math.min(0.5, (level - 1) * 0.1);
+    
+    ghosts.forEach(ghost => {
+        // La vitesse de base est ajustée en fonction du niveau
+        ghost.speed = baseGhostSpeed * ghostSpeedMultiplier;
+        
+        // Réduire le temps que les fantômes passent dans la boîte à chaque niveau
+        ghost.releaseTimer = Math.max(30, (ghost.index * 5 * 60) / Math.sqrt(level));
+    });
+    
+    // Réduire la durée des power-ups dans les niveaux avancés
+    powerupDuration = Math.max(300, 600 - (level - 1) * 50);
+    
+    // Ajouter des comportements spécifiques selon le niveau
+    if (level >= 3) {
+        // À partir du niveau 3, les fantômes peuvent parfois changer de direction aléatoirement
+        ghostRandomDirectionChance = 0.01 * (level - 2);
+    } else {
+        ghostRandomDirectionChance = 0;
+    }
+    
+    if (level >= 5) {
+        // À partir du niveau 5, les fantômes sortent plus rapidement après être mangés
+        ghostRespawnTime = Math.max(30, 120 - (level - 5) * 15);
+    } else {
+        ghostRespawnTime = 120; // 2 secondes par défaut (à 60 FPS)
+    }
+    
+    console.log(`Niveau ${level} - Difficulté ajustée:
+     - Vitesse Pac-Man: ${pacman.speed.toFixed(1)}
+     - Vitesse Fantômes: ${(baseGhostSpeed * ghostSpeedMultiplier).toFixed(1)}
+     - Durée Power-up: ${powerupDuration}
+     - Chance Direction Aléatoire: ${(ghostRandomDirectionChance * 100).toFixed(1)}%
+     - Temps Respawn: ${ghostRespawnTime}`);
+}
+let powerupDuration = 600; // Durée de base des power-ups
+let ghostRandomDirectionChance = 0; // Chance que les fantômes changent de direction aléatoirement
+let ghostRespawnTime = 120; 
+            
+            // Draw the game
+            function draw() {
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw maze
+                drawMaze();
+                
+                // Draw dots and power-ups
+                drawDots();
+                
+                // Draw Pac-Man
+                if (pacman.alive) {
+                    drawPacMan();
+                } else {
+                    drawPacManDeath();
+                }
+                
+                // Draw ghosts
+                drawGhosts();
+                
+                // Draw score
+                drawScore();
+                
+                // Draw lives
+                drawLives();
+            }
+            
+            // Draw the maze
+            function drawMaze() {
+                for (let y = 0; y < maze.length; y++) {
+                    for (let x = 0; x < maze[y].length; x++) {
+                        if (maze[y][x] === 1) { // Wall
+                            ctx.fillStyle = WALL_COLOR;
+                            ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                            
+                            // Add 3D effect to walls
+                            // Check surrounding cells to add rounded corners
+                            let top = y > 0 && maze[y-1][x] === 1;
+                            let right = x < maze[y].length - 1 && maze[y][x+1] === 1;
+                            let bottom = y < maze.length - 1 && maze[y+1][x] === 1;
+                            let left = x > 0 && maze[y][x-1] === 1;
+                            
+                            // Draw rounded edges based on surrounding walls
+                            ctx.fillStyle = '#0000bb'; // Slightly darker for 3D effect
+                            
+                            if (!top) {
+                                ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, 2);
+                            }
+                            if (!right) {
+                                ctx.fillRect(x * CELL_SIZE + CELL_SIZE - 2, y * CELL_SIZE, 2, CELL_SIZE);
+                            }
+                            if (!bottom) {
+                                ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE + CELL_SIZE - 2, CELL_SIZE, 2);
+                            }
+                            if (!left) {
+                                ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, 2, CELL_SIZE);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Draw dots and power-ups
+            function drawDots() {
+                for (let y = 0; y < maze.length; y++) {
+                    for (let x = 0; x < maze[y].length; x++) {
+                        if (maze[y][x] === 0) { // Regular dot
+                            ctx.fillStyle = DOT_COLOR;
+                            ctx.beginPath();
+                            ctx.arc(
+                                x * CELL_SIZE + CELL_SIZE / 2, 
+                                y * CELL_SIZE + CELL_SIZE / 2, 
+                                2, 0, Math.PI * 2
+                            );
+                            ctx.fill();
+                        } else if (maze[y][x] === 3) { // Power-up
+                            ctx.fillStyle = POWERUP_COLOR;
+                            
+                            // Make power-ups pulsate
+                            const pulse = 1 + Math.sin(Date.now() / 200) * 0.2;
+                            const radius = 6 * pulse;
+                            
+                            ctx.beginPath();
+                            ctx.arc(
+                                x * CELL_SIZE + CELL_SIZE / 2, 
+                                y * CELL_SIZE + CELL_SIZE / 2, 
+                                radius, 0, Math.PI * 2
+                            );
+                            ctx.fill();
+                        }
+                    }
+                }
+            }
+            
+            // Draw Pac-Man
+            function drawPacMan() {
+                ctx.save();
+                ctx.translate(pacman.x, pacman.y);
+                
+                // Rotate based on direction
+                let rotation = 0;
+                switch(pacman.direction) {
+                    case UP:
+                        rotation = -Math.PI / 2;
+                        break;
+                    case RIGHT:
+                        rotation = 0;
+                        break;
+                    case DOWN:
+                        rotation = Math.PI / 2;
+                        break;
+                    case LEFT:
+                        rotation = Math.PI;
+                        break;
+                }
+                ctx.rotate(rotation);
+                
+                // Draw Pac-Man body
+                ctx.fillStyle = PACMAN_COLOR;
+                ctx.beginPath();
+                ctx.arc(0, 0, pacman.radius, pacman.mouthOpen * Math.PI, (2 - pacman.mouthOpen) * Math.PI);
+                ctx.lineTo(0, 0);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+            
+            // Draw Pac-Man death animation
+            function drawPacManDeath() {
+                ctx.save();
+                ctx.translate(pacman.x, pacman.y);
+                
+                // Death animation progress (0 to 1)
+                pacman.deathFrame += 0.01;
+                const progress = Math.min(pacman.deathFrame, 1);
+                
+                // Draw disappearing Pac-Man
+                ctx.fillStyle = PACMAN_COLOR;
+                ctx.beginPath();
+                ctx.arc(0, 0, pacman.radius, (progress * Math.PI), (2 - progress) * Math.PI);
+                ctx.lineTo(0, 0);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+            
+            // Draw ghosts
+            function drawGhosts() {
+                ghosts.forEach(ghost => {
+                    ctx.save();
+                    ctx.translate(ghost.x, ghost.y);
+                    
+                    // Choose ghost color
+                    if (ghost.eaten) {
+                        // Eyes only for eaten ghosts
+                        drawGhostEyes(ghost.direction);
+                    } else {
+                        // Determine color
+                        let color = ghost.color;
+                        if (ghost.frightened) {
+                            // Blinking near the end of power-up
+                            if (powerupTimer < 120 && Math.floor(powerupTimer / 15) % 2 === 0) {
+                                color = GHOST_COLORS[ghost.index]; // Flash to original color
+                            } else {
+                                color = GHOST_FRIGHTENED_COLOR; // Blue
+                            }
+                        }
+                        
+                        drawGhostBody(color);
+                        drawGhostEyes(ghost.direction);
+                    }
+                    
+                    ctx.restore();
+                });
+            }
+            
+            // Draw ghost body
+            function drawGhostBody(color) {
+                // Body
+                ctx.fillStyle = color;
+                
+                // Upper semi-circle
+                ctx.beginPath();
+                ctx.arc(0, -2, CELL_SIZE / 2, Math.PI, 0);
+                ctx.lineTo(CELL_SIZE / 2, CELL_SIZE / 2);
+                
+                // Wavy bottom
+                const waveFrequency = Date.now() / 200;
+                for (let i = 0; i < 7; i++) {
+                    const waveX = CELL_SIZE / 2 - i * (CELL_SIZE / 3);
+                    const waveY = CELL_SIZE / 2 + (i % 2 === 0 ? -2 : 2);
+                    ctx.lineTo(waveX, waveY);
+                }
+                
+                ctx.fill();
+            }
+            
+            // Draw ghost eyes
+            function drawGhostEyes(direction) {
+                ctx.fillStyle = 'white';
+                
+                // Eye positions based on direction
+                let leftEyeX = -5;
+                let rightEyeX = 5;
+                let eyesY = -5;
+                
+                // Draw eye whites
+                ctx.beginPath();
+                ctx.arc(leftEyeX, eyesY, 4, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(rightEyeX, eyesY, 4, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Eye pupils based on direction
+                let pupilOffsetX = 0;
+                let pupilOffsetY = 0;
+                
+                switch(direction) {
+                    case UP:
+                        pupilOffsetY = -1.5;
+                        break;
+                    case RIGHT:
+                        pupilOffsetX = 1.5;
+                        break;
+                    case DOWN:
+                        pupilOffsetY = 1.5;
+                        break;
+                    case LEFT:
+                        pupilOffsetX = -1.5;
+                        break;
+                }
+                
+                // Draw pupils
+                ctx.fillStyle = 'blue';
+                ctx.beginPath();
+                ctx.arc(leftEyeX + pupilOffsetX, eyesY + pupilOffsetY, 2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(rightEyeX + pupilOffsetX, eyesY + pupilOffsetY, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Draw score
+            function drawScore() {
+                ctx.fillStyle = SCORE_COLOR;
+                ctx.font = '20px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText(`Score: ${score}`, 10, 25);
+                
+                // High score
+                ctx.textAlign = 'right';
+                ctx.fillText(`High Score: ${highScore}`, canvas.width - 10, 25);
+            }
+            
+            // Draw remaining lives
+            function drawLives() {
+                ctx.fillStyle = SCORE_COLOR;
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText(`Lives:`, 10, canvas.height - 10);
+                
+                // Draw Pac-Man icons for lives
+                for (let i = 0; i < lives; i++) {
+                    ctx.fillStyle = PACMAN_COLOR;
+                    ctx.beginPath();
+                    ctx.arc(
+                        70 + i * 20, 
+                        canvas.height - 15, 
+                        8, 
+                        0.25 * Math.PI, 
+                        1.75 * Math.PI
+                    );
+                    ctx.lineTo(70 + i * 20, canvas.height - 15);
+                    ctx.fill();
+                }
+                
+                // Draw level
+                ctx.fillStyle = SCORE_COLOR;
+                ctx.textAlign = 'right';
+                ctx.fillText(`Level: ${level}`, canvas.width - 10, canvas.height - 10);
+            }
+            
+            // Draw start screen
+            function drawStartScreen() {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Title
+    ctx.fillStyle = PACMAN_COLOR;
+    ctx.font = 'bold 36px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('PAC-COIN', canvas.width / 2, canvas.height / 3);
+    
+    // Instructions
+    ctx.fillStyle = 'white';
+    ctx.font = '18px Arial';
+    ctx.fillText('Click to start', canvas.width / 2, canvas.height / 2);
+    
+    ctx.font = '16px Arial';
+    ctx.fillText('Use arrow keys or click to move', canvas.width / 2, canvas.height / 2 + 40);
+    
+    // High score
+    if (highScore > 0) {
+        ctx.fillStyle = POWERUP_COLOR;
+        ctx.font = '20px Arial';
+        ctx.fillText(`Best score: ${highScore}`, canvas.width / 2, canvas.height / 2 + 80);
+    }
+    
+    // Logo animation
+    drawPacManLogo(canvas.width / 2 - 40, canvas.height / 3 - 80);
+}
+            
+            // Draw Pac-Man logo animation
+            function drawPacManLogo(x, y) {
+                // Pac-Man
+                ctx.fillStyle = PACMAN_COLOR;
+                const mouthOpen = 0.2 + Math.abs(Math.sin(Date.now() / 200)) * 0.3;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 30, mouthOpen * Math.PI, (2 - mouthOpen) * Math.PI);
+                ctx.lineTo(x, y);
+                ctx.fill();
+                
+                // Ghost
+                const ghostX = x + 80;
+                const ghostColor = GHOST_COLORS[Math.floor(Date.now() / 500) % 4];
+                
+                ctx.fillStyle = ghostColor;
+                
+                // Ghost body
+                ctx.beginPath();
+                ctx.arc(ghostX, y - 5, 20, Math.PI, 0);
+                ctx.lineTo(ghostX + 20, y + 15);
+                
+                // Wavy bottom
+                for (let i = 0; i < 5; i++) {
+                    const waveX = ghostX + 20 - i * 10;
+                    const waveY = y + 15 + (i % 2 === 0 ? 5 : 0);
+                    ctx.lineTo(waveX, waveY);
+                }
+                
+                ctx.fill();
+                
+                // Ghost eyes
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(ghostX - 7, y - 5, 5, 0, Math.PI * 2);
+                ctx.arc(ghostX + 7, y - 5, 5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = 'blue';
+                ctx.beginPath();
+                ctx.arc(ghostX - 7, y - 5, 2, 0, Math.PI * 2);
+                ctx.arc(ghostX + 7, y - 5, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            function addConnectionButtonToGameOver() {
+    // Remove any existing buttons first
+    const existingBtn = document.getElementById('wallet-connect-btn');
+    if (existingBtn) existingBtn.remove();
+    
+    // Create a new button
+    const button = document.createElement('button');
+    button.id = 'wallet-connect-btn';
+    button.innerHTML = "CONNECT & SAVE SCORE";
+    button.style.position = "absolute";
+    button.style.left = "50%";
+    button.style.top = "65%";
+    button.style.transform = "translateX(-50%)";
+    button.style.backgroundColor = "#ffff00";
+    button.style.color = "#000000";
+    button.style.fontWeight = "bold";
+    button.style.padding = "15px 30px";
+    button.style.fontSize = "18px";
+    button.style.border = "3px solid red";
+    button.style.borderRadius = "10px";
+    button.style.cursor = "pointer";
+    button.style.zIndex = "9999";
+    button.style.boxShadow = "0 0 20px yellow";
+    
+    // Add the button to the game container
+    document.querySelector('.game-container').appendChild(button);
+    
+    // Handle click event
+    button.onclick = async function() {
+        try {
+            if (!isPhantomInstalled()) {
+                alert("Phantom wallet is not installed! Please install it to continue.");
+                window.open("https://phantom.app/", "_blank");
+                return;
+            }
+            
+            // Disconnect first to ensure a clean connection
+            try {
+                if (window.solana?.isConnected) {
+                    await window.solana.disconnect();
+                    console.log("Disconnected for a clean reconnection");
+                }
+            } catch (e) {
+                console.log("Error disconnecting:", e);
+            }
+            
+            // Connect wallet
+            console.log("Attempting to connect...");
+            const resp = await window.solana.connect();
+            const publicKey = resp.publicKey.toString();
+            console.log("Connected successfully, key:", publicKey);
+            
+            // Update UI
+            const connectBtn = document.querySelector('.connect-btn');
+            if (connectBtn) {
+                connectBtn.textContent = publicKey.slice(0, 4) + '...' + publicKey.slice(-4);
+                connectBtn.style.backgroundColor = 'rgb(255, 182, 8)';
+            }
+            
+            // Save score
+            button.innerHTML = "SAVING SCORE...";
+            button.disabled = true;
+            
+            const result = await saveScoreToServer(publicKey, score, level);
+            const pacCoinsEarned = Math.floor(score/100);
+            
+            if (result && result.isNewHighScore) {
+            } else {
+            }
+            
+            // Only show success message for 3 seconds, then remove
+            button.innerHTML = "SCORE SAVED!";
+            button.style.backgroundColor = "#00ff00";
+            
+            // Remove the button after 3 seconds
+            setTimeout(() => {
+                button.remove();
+            }, 3000);
+            
+        } catch (error) {
+            console.error("Error:", error);
+            alert("Error: " + error.message);
+            button.innerHTML = "TRY AGAIN";
+            button.disabled = false;
+        }
+    };
+}
+            
+            // Draw game over screen
+            // Remplacez votre fonction drawGameOverScreen actuelle par celle-ci
+// Ajoutez cette fonction pour réinitialiser le drapeau lorsque le jeu redémarre
+function resetGame() {
+    score = 0;
+    level = 1;
+    lives = 3;
+    loadMaze();
+    resetEntities();
+    gameOver = false;
+    powerupActive = false;
+    powerupTimer = 0;
+    ghostsEaten = 0;
+    levelCompleted = false;
+    // Réinitialiser le drapeau de sauvegarde
+    scoreSaved = false;
+}
+
+// Remplacez votre fonction drawGameOverScreen actuelle par celle-ci
+function drawGameOverScreen() {
+    // Sauvegarde automatique du score si le wallet est connecté et que le score n'a pas déjà été sauvegardé
+    if (window.solana && window.solana.isConnected && window.solana.publicKey && !scoreSaved) {
+        console.log("Game over détecté - Sauvegarde automatique du score...");
+        // Marquer le score comme sauvegardé pour éviter les sauvegardes multiples
+        scoreSaved = true;
+        
+        // Utilisons setTimeout pour laisser l'interface utilisateur se mettre à jour d'abord
+        setTimeout(() => {
+            // Récupérer le niveau actuel du jeu depuis la variable globale
+            const currentLevel = (typeof level !== 'undefined') ? level : 1;
+            // Obtenir la clé publique du wallet
+            const wallet = window.solana.publicKey.toString();
+            // Sauvegarder directement avec saveScoreToServer, sans passer par saveScoreToBlockchain
+            saveScoreToServer(wallet, score, currentLevel).then(result => {
+                const pacCoinsEarned = Math.floor(score/100);
+                if (result && result.isNewHighScore) {
+                } else {
+                }
+            }).catch(error => {
+                console.error("Error saving score:", error);
+                // Réinitialiser le drapeau en cas d'erreur pour permettre une nouvelle tentative
+                scoreSaved = false;
+            });
+        }, 500);
+    }
+    
+    // Affichage normal de l'écran de Game Over
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Game over text
+    ctx.fillStyle = 'red';
+    ctx.font = 'bold 40px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 3);
+    
+    // Final score
+    ctx.fillStyle = SCORE_COLOR;
+    ctx.font = '24px Arial';
+    ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2);
+    
+    // High score
+    if (score >= highScore) {
+        ctx.fillStyle = PACMAN_COLOR;
+        ctx.fillText('NEW HIGH SCORE!', canvas.width / 2, canvas.height / 2 + 40);
+    } else {
+        ctx.fillStyle = POWERUP_COLOR;
+        ctx.fillText(`High Score: ${highScore}`, canvas.width / 2, canvas.height / 2 + 40);
+    }
+    
+    // Restart instructions
+    ctx.fillStyle = 'white';
+    ctx.font = '20px Arial';
+    ctx.fillText('Click to play again', canvas.width / 2, canvas.height / 2 + 80);
+    
+    // Si le wallet est connecté et que le score est sauvegardé
+    if (window.solana && window.solana.isConnected && scoreSaved) {
+        ctx.fillStyle = '#AAFFAA';
+        ctx.font = '16px Arial';
+        ctx.fillText('Score saved successfully!', canvas.width / 2, canvas.height / 2 + 120);
+    }
+    // Si le wallet n'est pas connecté, afficher le bouton de connexion
+    else if (!window.solana || !window.solana.isConnected) {
+        ctx.fillStyle = '#AAFFAA';
+        ctx.font = '16px Arial';
+        ctx.fillText('Connect your wallet to save your score', canvas.width / 2, canvas.height / 2 + 120);
+        
+        // Ajouter le bouton de connexion avec un délai
+        setTimeout(() => {
+            // Vérifier si le bouton existe déjà
+            if (!document.getElementById('wallet-connect-btn')) {
+                const button = document.createElement('button');
+                button.id = 'wallet-connect-btn';
+                button.innerHTML = "CONNECT & SAVE SCORE";
+                button.style.position = "absolute";
+                button.style.left = "50%";
+                button.style.top = "65%";
+                button.style.transform = "translateX(-50%)";
+                button.style.backgroundColor = "#ffff00";
+                button.style.color = "#000000";
+                button.style.fontWeight = "bold";
+                button.style.padding = "15px 30px";
+                button.style.fontSize = "18px";
+                button.style.border = "3px solid red";
+                button.style.borderRadius = "10px";
+                button.style.cursor = "pointer";
+                button.style.zIndex = "9999";
+                button.style.boxShadow = "0 0 20px yellow";
+                
+                // Ajouter le bouton au conteneur du jeu
+                document.querySelector('.game-container').appendChild(button);
+                
+                // Gérer l'événement de clic
+                button.onclick = async function() {
+                    try {
+                        if (!isPhantomInstalled()) {
+                            alert("Phantom wallet is not installed! Please install it to continue.");
+                            window.open("https://phantom.app/", "_blank");
+                            return;
+                        }
+                        
+                        // Connecter le wallet
+                        console.log("Attempting to connect...");
+                        const resp = await window.solana.connect();
+                        const publicKey = resp.publicKey.toString();
+                        console.log("Connected successfully, key:", publicKey);
+                        
+                        // Mettre à jour l'interface utilisateur
+                        const connectBtn = document.querySelector('.connect-btn');
+                        if (connectBtn) {
+                            connectBtn.textContent = publicKey.slice(0, 4) + '...' + publicKey.slice(-4);
+                            connectBtn.style.backgroundColor = 'rgb(255, 182, 8)';
+                        }
+                        
+                        // Sauvegarder le score
+                        button.innerHTML = "SAVING SCORE...";
+                        button.disabled = true;
+                        
+                        // Récupérer le niveau actuel du jeu depuis la variable globale
+                        // La variable level devrait être disponible globalement
+                        // Si elle n'est pas définie, on utilise 1 par défaut
+                        const currentLevel = (typeof level !== 'undefined') ? level : 1;
+                        // Mettre à jour scoreSaved pour éviter les sauvegardes multiples
+                        scoreSaved = true;
+                        
+                        const result = await saveScoreToServer(publicKey, score, currentLevel);
+                        const pacCoinsEarned = Math.floor(score/100);
+                        
+                        if (result && result.isNewHighScore) {
+                        } else {
+                        }
+                        
+                        // Afficher un message de succès pendant 3 secondes, puis retirer
+                        button.innerHTML = "SCORE SAVED!";
+                        button.style.backgroundColor = "#00ff00";
+                        
+                        // Retirer le bouton après 3 secondes
+                        setTimeout(() => {
+                            button.remove();
+                        }, 3000);
+                    } catch (error) {
+                        console.error("Error:", error);
+                        alert("Error: " + error.message);
+                        button.innerHTML = "TRY AGAIN";
+                        button.disabled = false;
+                    }
+                };
+            }
+        }, 500);
+    }
+}
+            // Game loop
+            function gameLoop(timestamp) {
+                if (!gameStarted || gameOver) {
+                    if (gameOver) {
+                        drawGameOverScreen();
+                    }
+                    requestAnimationFrame(gameLoop);
+                    return;
+                }
+                
+                // Update powerup timer
+                if (powerupActive) {
+                    powerupTimer--;
+                    if (powerupTimer <= 0) {
+                        powerupActive = false;
+                        ghosts.forEach(ghost => {
+                            if (!ghost.eaten) {
+                                ghost.frightened = false;
+                            }
+                        });
+                    }
+                }
+                
+                // Move characters
+                if (pacman.alive) {
+                    movePacMan();
+                    moveGhosts();
+                }
+                
+                // Draw everything
+                draw();
+                
+                // Continue the game loop
+                requestAnimationFrame(gameLoop);
+            }
+            
+            // Contract address copy functionality
+            document.querySelector('.contract-address').addEventListener('click', function() {
+                const addressText = document.querySelector('.address-value').textContent;
+                navigator.clipboard.writeText(addressText)
+                    .then(() => {
+                        
+                    })
+                    .catch(err => {
+                        console.error('Erreur lors de la copie: ', err);
+                    });
+            });
+            
+            // Initialize the game with a slight delay to ensure DOM is ready
+            setTimeout(init, 100);
+
+            // Ajoutez ce code à la toute fin de votre fonction window.onload
+function injectGameOverHandler() {
+    // Créer une surveillance directe sur la variable gameOver
+    // en utilisant Object.defineProperty pour intercepter quand elle devient true
+    let _gameOver = false;
+    
+    Object.defineProperty(window, 'gameOver', {
+        get: function() {
+            return _gameOver;
+        },
+        set: function(newValue) {
+            _gameOver = newValue;
+            
+            // Si gameOver devient true, sauvegarder le score
+            if (newValue === true) {
+                console.log("GAME OVER DÉTECTÉ! Score:", score, "Level:", level);
+                
+                // Attendre un peu que l'écran de game over s'affiche
+                setTimeout(() => {
+                    // Vérifier si wallet est connecté
+                    if (window.solana && window.solana.isConnected) {
+                        saveScoreToBlockchain(score);
+                    } else {
+                        console.log("Wallet non connecté, ajout du bouton...");
+                        // Ajouter un bouton spécifique à l'écran de game over
+                        const walletBtn = document.createElement('button');
+                        walletBtn.innerHTML = "Connect Wallet to Save Score";
+                        walletBtn.style.position = "absolute";
+                        walletBtn.style.left = "50%";
+                        walletBtn.style.bottom = "100px";
+                        walletBtn.style.transform = "translateX(-50%)";
+                        walletBtn.style.backgroundColor = "#fd0";
+                        walletBtn.style.color = "#000";
+                        walletBtn.style.border = "none";
+                        walletBtn.style.padding = "10px 20px";
+                        walletBtn.style.borderRadius = "5px";
+                        walletBtn.style.fontWeight = "bold";
+                        walletBtn.onclick = connectPhantomWallet;
+                        
+                        document.querySelector('.game-container').appendChild(walletBtn);
+                    }
+                }, 500);
+            }
+        }
+    });
+}
+        };
+        function showConnectButton() {
+    // Vérifier si le bouton existe déjà
+    if (document.getElementById('wallet-connect-btn')) {
+        return; // Ne pas créer un autre bouton
+    }
+    
+    // Créer un bouton bien visible
+    const walletBtn = document.createElement('button');
+    walletBtn.id = 'wallet-connect-btn';
+    walletBtn.innerHTML = "CONNECTER WALLET & SAUVEGARDER SCORE";
+    walletBtn.style.position = "absolute";
+    walletBtn.style.left = "50%";
+    walletBtn.style.top = "60%";
+    walletBtn.style.transform = "translateX(-50%)";
+    walletBtn.style.backgroundColor = "#ffff00";
+    walletBtn.style.color = "#000000";
+    walletBtn.style.border = "3px solid red";
+    walletBtn.style.padding = "15px 25px";
+    walletBtn.style.borderRadius = "5px";
+    walletBtn.style.fontSize = "16px";
+    walletBtn.style.fontWeight = "bold";
+    walletBtn.style.cursor = "pointer";
+    walletBtn.style.zIndex = "1000";
+    walletBtn.style.boxShadow = "0 0 10px rgba(255, 255, 0, 0.7)";
+    
+    walletBtn.onclick = async function() {
+        try {
+            await connectPhantomWallet();
+            setTimeout(() => {
+                saveScoreToBlockchain(score);
+                walletBtn.remove();
+            }, 500);
+        } catch (error) {
+            console.error("Erreur lors de la connexion:", error);
+        }
+    };
+    
+    document.querySelector('.game-container').appendChild(walletBtn);
+}
+        
+    
+function enhanceGameOverDetection() {
+    console.log("Mise en place de la détection automatique de fin de partie...");
+    
+    // Sauvegarde de la fonction gameLoop originale
+    const originalGameLoop = gameLoop;
+    
+    // Remplacer la fonction gameLoop
+    window.gameLoop = function(timestamp) {
+        // Si le jeu vient juste de se terminer dans cette frame
+        if (!window.wasGameOverLastFrame && gameOver) {
+            console.log("Fin de partie détectée! Score:", score, "Niveau:", level);
+            
+            // Vérifier si le wallet est connecté
+            if (window.solana && window.solana.isConnected && window.solana.publicKey) {
+                console.log("Wallet connecté, sauvegarde automatique du score...");
+                // Petit délai pour laisser l'écran de game over s'afficher
+                setTimeout(() => {
+                    saveScoreToBlockchain(score);
+                }, 500);
+            } else {
+                console.log("Wallet non connecté, affichage du bouton...");
+                showConnectButton();
+            }
+        }
+        
+        // Mémoriser l'état actuel pour la prochaine frame
+        window.wasGameOverLastFrame = gameOver;
+        
+        // Appeler la fonction gameLoop originale
+        originalGameLoop(timestamp);
+    };
+    
+    // Initialiser la variable de suivi
+    window.wasGameOverLastFrame = false;
+    
+    console.log("Détection de fin de partie améliorée!");
+}
+
+// Also fix the saveScoreToBlockchain function
+
+// Call this function after the page loads
+
+// Ajoute cette fonction après la fonction enhanceGameOverDetection()
+
+// Fonction pour diagnostiquer et afficher l'état du wallet
+function debugWalletStatus() {
+    console.log("=== DIAGNOSTIC WALLET ===");
+    console.log("window.solana existe:", window.solana ? "OUI" : "NON");
+    console.log("isPhantomInstalled():", isPhantomInstalled() ? "OUI" : "NON");
+    
+    if (window.solana) {
+        console.log("window.solana.isConnected:", window.solana.isConnected ? "OUI" : "NON");
+        console.log("window.solana.publicKey:", window.solana.publicKey ? window.solana.publicKey.toString() : "NON");
+    }
+    
+    // Vérification supplémentaire via le bouton de connexion
+    const connectButton = document.querySelector('.connect-btn');
+    if (connectButton) {
+        console.log("Texte du bouton:", connectButton.textContent);
+        console.log("Est-ce que le bouton semble connecté:", connectButton.textContent !== "Connect");
+    }
+    console.log("========================");
+}
+
+// Modification de la fonction saveScoreToBlockchain pour être plus robuste
+async function saveScoreToBlockchain(score) {
+    try {
+        console.log("État du wallet:", {
+            installé: isPhantomInstalled(),
+            connecté: window.solana?.isConnected,
+            publicKey: window.solana?.publicKey?.toString()
+        });
+        
+        // Vérifier si le wallet est connecté
+        if (!isPhantomInstalled() || !window.solana?.isConnected || !window.solana?.publicKey) {
+            console.log("Wallet non connecté, impossible de sauvegarder");
+            return false;
+        }
+        
+        // Récupérer l'adresse du wallet et le niveau actuel
+        const wallet = window.solana.publicKey.toString();
+        const currentLevel = level;
+        
+        console.log(`Sauvegarde du score ${score} pour le wallet ${wallet} au niveau ${currentLevel}`);
+        
+        // Enregistrer le score dans la base de données
+        const result = await saveScoreToServer(wallet, score, currentLevel);
+        
+        // Calculer les PacCoins gagnés
+        const pacCoinsEarned = Math.floor(score/100);
+        
+        // Afficher un message personnalisé
+        if (result && result.isNewHighScore) {
+            alert(`Score ${score} sauvegardé ! Vous avez gagné ${pacCoinsEarned} PacCoins ! NOUVEAU RECORD !`);
+            document.querySelector('.message').textContent = `Nouveau record : ${score} ! Pouvez-vous faire mieux ?`;
+        } else {
+            alert(`Score ${score} sauvegardé ! Vous avez gagné ${pacCoinsEarned} PacCoins !`);
+        }
+        
+        // Supprimer le bouton de connexion s'il existe
+        const connectButton = document.getElementById('wallet-connect-btn');
+        if (connectButton) {
+            connectButton.innerHTML = "SCORE SAUVEGARDÉ !";
+            connectButton.style.backgroundColor = "#00ff00";
+            
+            // Supprimer le bouton après 2 secondes
+            setTimeout(() => {
+                connectButton.remove();
+            }, 2000);
+        }
+        
+        return true;
+    } catch (error) {
+        console.error("Erreur lors de la sauvegarde du score:", error);
+        alert("Erreur de sauvegarde: " + error.message);
+        return false;
+    }
+}
+
+// Modification de enhanceGameOverDetection pour inclure un bouton plus visible
+function enhanceGameOverDetection() {
+    console.log("Enhancing game over detection...");
+    
+    // Create a backup of the original gameLoop function
+    const originalGameLoop = window.gameLoop;
+    
+    // Override the gameLoop function to add score saving
+    window.gameLoop = function(timestamp) {
+        // If game just became over in this frame, save the score
+        if (!window.wasGameOverLastFrame && gameOver) {
+            console.log("Game Over detected! Score:", score, "Level:", level);
+            debugWalletStatus(); // Diagnostic au moment du game over
+            
+            // Check if wallet is connected
+            if (window.solana && window.solana.isConnected && window.solana.publicKey) {
+                console.log("Wallet connected, saving score...");
+                setTimeout(() => {
+                    saveScoreToBlockchain(score);
+                }, 500);
+            } else {
+                console.log("Wallet not connected, adding button...");
+                
+                // Add a button directly on top of the game over screen
+                const walletBtn = document.createElement('button');
+                walletBtn.innerHTML = "CONNECTER WALLET & SAUVEGARDER SCORE";
+                walletBtn.style.position = "absolute";
+                walletBtn.style.left = "50%";
+                walletBtn.style.top = "60%";
+                walletBtn.style.transform = "translateX(-50%)";
+                walletBtn.style.backgroundColor = "#ff0";
+                walletBtn.style.color = "#000";
+                walletBtn.style.border = "3px solid #f00";
+                walletBtn.style.padding = "15px 25px";
+                walletBtn.style.borderRadius = "5px";
+                walletBtn.style.fontSize = "16px";
+                walletBtn.style.fontWeight = "bold";
+                walletBtn.style.cursor = "pointer";
+                walletBtn.style.zIndex = "1000";
+                walletBtn.style.boxShadow = "0 0 10px rgba(255, 255, 0, 0.7)";
+                walletBtn.onclick = async function() {
+                    const result = await connectPhantomWallet();
+                    if (result) {
+                        setTimeout(() => {
+                            saveScoreToBlockchain(score);
+                        }, 500);
+                    }
+                };
+                
+                document.querySelector('.game-container').appendChild(walletBtn);
+            }
+        }
+        
+        // Store current game over state for next frame
+        window.wasGameOverLastFrame = gameOver;
+        
+        // Call the original game loop
+        originalGameLoop(timestamp);
+    };
+    
+    // Initialize tracking variable
+    window.wasGameOverLastFrame = false;
+    
+    console.log("Game over detection enhanced!");
+}
+
+let walletConnectedThisSession = false;
+
+// Replace the connectPhantomWallet function with this improved version
+async function connectPhantomWallet() {
+    try {
+        // Vérifier si Phantom est installé
+        if (!isPhantomInstalled()) {
+            alert("Phantom n'est pas installé. Veuillez installer l'extension Phantom Wallet pour continuer.");
+            window.open("https://phantom.app/", "_blank");
+            return null;
+        }
+
+        // Référence au bouton de connexion
+        const connectButton = document.querySelector('.connect-btn');
+        
+        try {
+            // Déconnecter d'abord si déjà connecté (pour éviter les problèmes d'état)
+            if (window.solana?.isConnected) {
+                try {
+                    await window.solana.disconnect();
+                    console.log("Wallet déconnecté pour une reconnexion propre");
+                } catch (disconnectError) {
+                    console.log("Erreur lors de la déconnexion:", disconnectError);
+                }
+            }
+            
+            // Demander la connexion au wallet
+            console.log("Tentative de connexion au wallet...");
+            const resp = await window.solana.connect();
+            const publicKey = resp.publicKey.toString();
+            
+            // Mettre à jour l'interface utilisateur
+            if (connectButton) {
+                connectButton.textContent = publicKey.slice(0, 4) + '...' + publicKey.slice(-4);
+                connectButton.style.backgroundColor = 'rgb(255, 182, 8)';
+            }
+            
+            // Afficher un message de succès
+            console.log("Wallet connecté avec succès:", publicKey);
+            
+            // Mettre à jour le message du jeu
+            const messageElement = document.querySelector('.message');
+            if (messageElement) {
+                messageElement.textContent = "Jouez pour gagner des PacCoins! Votre score sera enregistré automatiquement.";
+            }
+            
+            // Récupérer le meilleur score du joueur depuis le serveur
+            getUserBestScore(publicKey);
+            
+            return publicKey;
+        } catch (err) {
+            console.error("Erreur de connexion:", err);
+            alert("Erreur lors de la connexion au wallet: " + err.message);
+            return null;
+        }
+    } catch (error) {
+        console.error("Erreur:", error);
+        alert("Une erreur est survenue: " + error.message);
+        return null;
+    }
+}
+
+// Appeler ces fonctions au chargement
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Initialisation du système de sauvegarde automatique...");
+    
+    // Attendre que le jeu soit complètement chargé
+    setTimeout(() => {
+        // Activer la détection de fin de partie améliorée
+        enhanceGameOverDetection();
+        
+        // Vérifier si le wallet est déjà connecté
+        if (isPhantomInstalled() && window.solana && window.solana.isConnected) {
+            console.log("Wallet déjà connecté. La sauvegarde automatique sera activée.");
+            
+            // Mettre à jour le message du jeu
+            const messageElement = document.querySelector('.message');
+            if (messageElement) {
+                messageElement.textContent = "Jouez pour gagner des PacCoins! Votre score sera enregistré automatiquement.";
+            }
+            
+            // Récupérer le meilleur score si possible
+            if (window.solana.publicKey) {
+                getUserBestScore(window.solana.publicKey.toString());
+            }
+        }
+    }, 1000);
+});
+
+// Ajouter cette fonction à la fin du script principal du jeu
+// juste avant la fermeture de la balise
+enhanceGameOverDetection();
+    </script>
+
+    <style>
+        /* Style pour les appareils mobiles */
+@media (max-width: 768px) {
+    /* Réorganisation du header */
+    .main-header {
+        flex-direction: column;
+        padding-bottom: 10px;
+    }
+    
+    /* Centrer le logo */
+    .logo-section {
+        width: 100%;
+        justify-content: center;
+        padding: 10px 0 5px 0;
+    }
+    
+    /* Placer le bouton connect sous le logo */
+    .main-nav2 {
+        width: 100%;
+        order: 2; /* Place le bouton connect en 2ème position */
+        justify-content: center;
+        margin: 5px 0 10px 0;
+    }
+    
+    /* Ajuster le bouton connect */
+    .connect-btn {
+        padding: 5px 15px;
+        font-size: 12px;
+        margin-right: 0; /* Enlever la marge droite */
+    }
+    
+    /* Ajuster la navigation principale */
+    .main-nav {
+        width: 100%;
+        order: 3; /* Place la navigation en 3ème position */
+    }
+    
+    /* Style pour la liste des éléments de navigation */
+    .nav-items {
+        flex-direction: row;
+        width: 100%;
+        overflow-x: auto;
+        justify-content: center;
+        padding: 5px 0;
+    }
+    
+    /* Ajuster les éléments de navigation individuels */
+    .nav-item {
+        flex-direction: column;
+        min-width: 60px;
+        padding: 8px 5px;
+        font-size: 12px;
+    }
+    
+    /* Réduire la taille des icônes */
+    .nav-item .icon, .icon2 {
+        width: 20px;
+        height: 20px;
+        margin-bottom: 3px;
+    }
+    
+    /* Ajuster la taille du texte */
+    .nav-item .title {
+        font-size: 12px;
+    }
+    
+    /* Masquer les sous-titres sur mobile */
+    .nav-item .subtitle {
+        display: none;
+    }
+}
+
+/* CSS optimisé pour un affichage sans défilement avec jeu centré */
+html, body {
+    height: 100%;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.top-bar {
+    flex: 0 0 auto;
+}
+
+.main-header {
+    flex: 0 0 auto;
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    margin: 0 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 1200px;
+}
+
+.contract-address {
+    width: 90%;
+    max-width: 500px;
+    margin: 10px auto;
+}
+
+.message {
+    font-size: 18px;
+    margin: 10px 0;
+    max-width: 90%;
+}
+
+.game-container {
+    margin: 10px auto;
+    position: relative;
+    touch-action: none;
+}
+
+.view-leaderboard {
+    margin: 10px 0;
+}
+
+.pacman-footer {
+    flex: 0 0 auto;
+    display: block;
+    margin-top: auto;
+    padding-bottom: 0;
+}
+
+/* Pour les mobiles en général */
+@media (max-width: 768px) {
+    /* Réorganisation du header */
+    .main-header {
+        flex-direction: column;
+        padding-bottom: 5px;
+    }
+    
+    /* Centrer le logo */
+    .logo-section {
+        width: 100%;
+        justify-content: center;
+        padding: 5px 0;
+    }
+    
+    /* Placer le bouton connect sous le logo */
+    .main-nav2 {
+        width: 100%;
+        order: 2;
+        justify-content: center;
+        margin: 5px 0;
+    }
+    
+    /* Ajuster le bouton connect */
+    .connect-btn {
+        padding: 5px 15px;
+        font-size: 12px;
+        margin-right: 0;
+    }
+    
+    /* Ajuster la navigation principale */
+    .main-nav {
+        width: 100%;
+        order: 3;
+    }
+    
+    /* Style pour la liste des éléments de navigation */
+    .nav-items {
+        flex-direction: row;
+        width: 100%;
+        overflow-x: auto;
+        justify-content: center;
+        padding: 5px 0;
+    }
+    
+    /* Ajuster les éléments de navigation individuels */
+    .nav-item {
+        flex-direction: column;
+        min-width: 60px;
+        padding: 8px 5px;
+        font-size: 12px;
+    }
+    
+    /* Réduire la taille des icônes */
+    .nav-item .icon, .icon2 {
+        width: 20px;
+        height: 20px;
+        margin-bottom: 3px;
+    }
+    
+    /* Ajuster la taille du texte */
+    .nav-item .title {
+        font-size: 12px;
+    }
+    
+    /* Masquer les sous-titres sur mobile */
+    .nav-item .subtitle {
+        display: none;
+    }
+    
+    /* Simplifier le footer sur mobile */
+    .pacman-footer {
+        padding: 5px 0;
+        background-color: #000;
+    }
+    
+    .follow-us-section, .footer-links, .company-logo {
+        display: none;
+    }
+    
+    .pac-bar {
+        margin-top: 0;
+        padding: 5px 0;
+    }
+}
+
+/* Pour les petits écrans */
+@media (max-height: 600px) {
+    .message {
+        font-size: 14px;
+        margin: 3px 0;
+    }
+    
+    .contract-address {
+        padding: 5px 10px;
+        margin: 5px auto;
+    }
+    
+    .game-container {
+        transform: scale(0.9);
+        transform-origin: center center;
+    }
+}
+
+/* Pour les mobiles en mode paysage */
+@media (max-height: 450px) {
+    .top-bar {
+        display: none;
+    }
+    
+    .game-container {
+        transform: scale(0.8);
+    }
+    
+    .message, .contract-address {
+        display: none;
+    }
+}
+
+/* Corrections spécifiques */
+#game-canvas {
+
+    display: block;
+    margin: 0 auto;
+}
+
+/* Empêcher le défilement avec les flèches */
+.game-container {
+    touch-action: none;
+}
+
+/* Réduction de la taille de la section FOLLOW US */
+.follow-us-section {
+    padding: 15px;
+    margin: 10px auto;
+}
+
+.follow-us-content {
+    gap: 10px;
+}
+
+.follow-us-title {
+    max-width: 200px;
+}
+
+.social-icons {
+    gap: 25px;
+}
+
+.social-icon img {
+    width: 35px;
+    height: 35px;
+}
+
+/* Assurer que le jeu s'affiche correctement */
+.game-container {
+    margin: 10px auto;
+    max-height: none;
+    transform: none;
+}
+
+/* Réduire l'espace entre les éléments */
+.main-content {
+    padding: 10px;
+}
+
+.message, .contract-address {
+    margin: 5px auto;
+}
+
+/* Ajuster le footer */
+.pacman-footer {
+    padding-top: 0;
+}
+
+/* Gérer la taille sur petits écrans */
+@media (max-height: 700px) {
+    .follow-us-section {
+        padding: 8px;
+    }
+    
+    .social-icon img {
+        width: 25px;
+        height: 25px;
+    }
+    
+    .follow-us-title {
+        max-width: 150px;
+    }
+}
+    </style>
+    <script>
+   // Solution complète pour l'affichage mobile du jeu PacCoin
+// Ce script garantit l'affichage complet du jeu avec des contrôles accessibles
+
+// CSS pour optimiser l'affichage mobile
+const optimizedMobileCSS = `
+/* Ajustements pour tous les appareils mobiles */
+@media (max-width: 768px) {
+  /* Réduire les marges et paddings pour maximiser l'espace disponible */
+  body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Ajuster le contenu principal pour qu'il prenne moins de place */
+  .main-content {
+    padding: 5px !important;
+    margin: 5px auto !important;
+    max-width: 100% !important;
+  }
+  
+  /* Réduire les espaces entre les éléments */
+  .contract-address {
+    margin: 5px auto !important;
+    padding: 8px !important;
+  }
+  
+  .message {
+    margin: 5px 0 !important;
+    font-size: 16px !important;
+    animation: none !important;
+  }
+  
+  /* Conteneur de jeu adaptatif */
+  .game-container {
+    width: 100% !important;
+    max-width: 95vw !important;
+    height: auto !important;
+    aspect-ratio: 448/496; /* Maintient le ratio d'aspect du jeu */
+    margin: 5px auto !important;
+    overflow: visible !important;
+    transform: none !important;
+    border-width: 2px !important;
+  }
+  
+  /* Canvas de jeu adaptatif */
+  #game-canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+  }
+  
+  /* Rendre le bouton de leaderboard plus compact */
+  .view-leaderboard {
+    margin: 10px auto 5px !important;
+    padding: 8px 15px !important;
+    font-size: 14px !important;
+  }
+  
+  /* Masquer certains éléments non essentiels sur mobile */
+  .follow-us-section,
+  .company-logo {
+    display: none !important;
+  }
+  
+  /* Simplifier le footer */
+  .pacman-footer {
+    padding: 5px 0 !important;
+  }
+  
+  .pac-bar {
+    padding: 5px 0 !important;
+  }
+}
+
+/* Réglages spécifiques pour les petits écrans */
+@media (max-width: 380px) {
+  .message {
+    font-size: 14px !important;
+  }
+  
+  /* Réduire encore plus les marges */
+  .main-content {
+    padding: 3px !important;
+  }
+  
+  .game-container {
+    border-width: 1px !important;
+  }
+}
+
+/* Styles pour les contrôles directionnels */
+.controls-container {
+  position: fixed;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 150px;
+  height: 150px;
+  z-index: 9999;
+  pointer-events: none; /* Le conteneur lui-même ne bloque pas les clics */
+}
+
+.direction-pad {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.control-button {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background-color: rgba(255, 215, 0, 0.85);
+  border: 2px solid black;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+  color: black;
+  pointer-events: auto; /* Les boutons eux-mêmes captent les clics */
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+.control-button:active {
+  background-color: #FF8C00;
+  transform: scale(0.95);
+}
+
+.btn-up {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 8px 8px 3px 3px;
+}
+
+.btn-right {
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  border-radius: 3px 8px 8px 3px;
+}
+
+.btn-down {
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 3px 3px 8px 8px;
+}
+
+.btn-left {
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  border-radius: 8px 3px 3px 8px;
+}
+
+/* Ajustements pour le mode paysage */
+@media (orientation: landscape) {
+  .controls-container {
+    left: auto;
+    right: 20px;
+    transform: none;
+  }
+  
+  /* Ajustement pour permettre de voir tout le jeu en mode paysage */
+  @media (max-height: 450px) {
+    .game-container {
+      max-height: 85vh !important;
+      width: auto !important;
+      max-width: 85vh !important;
+    }
+  }
+}
+`;
+
+// Fonction pour améliorer l'affichage mobile
+function optimizeMobileDisplay() {
+  console.log("Optimisation de l'affichage mobile...");
+  
+  // Ajouter le CSS optimisé
+  const styleElement = document.createElement('style');
+  styleElement.textContent = optimizedMobileCSS;
+  document.head.appendChild(styleElement);
+  
+  // Assurer que le viewport est correctement configuré
+  const viewportMeta = document.querySelector('meta[name="viewport"]');
+  if (viewportMeta) {
+    viewportMeta.content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no";
+  }
+  
+  // Créer les contrôles directionnels
+  createDirectionalControls();
+  
+  // Ajuster l'écran pour s'assurer que tout est bien affiché
+  adjustDisplayForFullVisibility();
+  
+  // Configurer les écouteurs d'événements pour les changements d'orientation
+  window.addEventListener('resize', adjustDisplayForFullVisibility);
+  window.addEventListener('orientationchange', function() {
+    setTimeout(adjustDisplayForFullVisibility, 300);
+  });
+  
+  console.log("Optimisation mobile terminée");
+}
+
+// Fonction pour créer les contrôles directionnels
+function createDirectionalControls() {
+  // Créer le conteneur des contrôles
+  const controlsContainer = document.createElement('div');
+  controlsContainer.className = 'controls-container';
+  
+  const directionPad = document.createElement('div');
+  directionPad.className = 'direction-pad';
+  
+  // Définition des boutons
+  const buttons = [
+    { name: 'up', symbol: '↑', direction: 0, keyCode: 'ArrowUp', class: 'btn-up' },
+    { name: 'right', symbol: '→', direction: 1, keyCode: 'ArrowRight', class: 'btn-right' },
+    { name: 'down', symbol: '↓', direction: 2, keyCode: 'ArrowDown', class: 'btn-down' },
+    { name: 'left', symbol: '←', direction: 3, keyCode: 'ArrowLeft', class: 'btn-left' }
+  ];
+  
+  // Créer chaque bouton
+  buttons.forEach(btn => {
+    const button = document.createElement('div');
+    button.className = `control-button ${btn.class}`;
+    button.innerHTML = btn.symbol;
+    button.setAttribute('data-direction', btn.direction);
+    button.setAttribute('data-key', btn.keyCode);
+    
+    // Événements tactiles
+    button.addEventListener('touchstart', function(e) {
+      e.preventDefault();
+      this.style.backgroundColor = '#FF8C00';
+      handleDirectionPress(btn.direction, btn.keyCode);
+    });
+    
+    button.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      this.style.backgroundColor = 'rgba(255, 215, 0, 0.85)';
+    });
+    
+    // Événements souris (pour tests)
+    button.addEventListener('mousedown', function(e) {
+      e.preventDefault();
+      this.style.backgroundColor = '#FF8C00';
+      handleDirectionPress(btn.direction, btn.keyCode);
+    });
+    
+    button.addEventListener('mouseup', function(e) {
+      e.preventDefault();
+      this.style.backgroundColor = 'rgba(255, 215, 0, 0.85)';
+    });
+    
+    directionPad.appendChild(button);
+  });
+  
+  controlsContainer.appendChild(directionPad);
+  document.body.appendChild(controlsContainer);
+}
+
+// Fonction pour gérer l'appui sur un bouton directionnel
+function handleDirectionPress(direction, keyCode) {
+  console.log(`Direction pressée: ${direction} (${keyCode})`);
+  
+  // Méthode 1: Simulation d'événement clavier
+  const event = new KeyboardEvent('keydown', {
+    key: keyCode,
+    code: keyCode,
+    keyCode: getKeyCode(keyCode),
+    which: getKeyCode(keyCode),
+    bubbles: true,
+    cancelable: true
+  });
+  document.dispatchEvent(event);
+  
+  // Méthode 2: Interaction directe avec les variables du jeu
+  if (typeof pacman !== 'undefined') {
+    // Mettre à jour la direction
+    pacman.nextDirection = direction;
+    
+    // Démarrer le jeu si nécessaire
+    if (typeof gameStarted !== 'undefined' && !gameStarted) {
+      gameStarted = true;
+      requestAnimationFrame(gameLoop);
+    }
+  }
+}
+
+// Fonction pour obtenir le code numérique des touches
+function getKeyCode(key) {
+  const keyMap = {
+    'ArrowUp': 38,
+    'ArrowRight': 39,
+    'ArrowDown': 40,
+    'ArrowLeft': 37
+  };
+  return keyMap[key] || 0;
+}
+
+// Fonction pour ajuster l'affichage
+function adjustDisplayForFullVisibility() {
+  const gameContainer = document.querySelector('.game-container');
+  const canvas = document.getElementById('game-canvas');
+  
+  if (!gameContainer || !canvas) return;
+  
+  // Ajuster la taille du conteneur pour les mobiles
+  if (window.innerWidth <= 768) {
+    // Calcul de la taille optimale
+    const availableWidth = Math.min(window.innerWidth * 0.95, 448);
+    const aspectRatio = 496 / 448;
+    const calculatedHeight = availableWidth * aspectRatio;
+    
+    // Appliquer les dimensions
+    gameContainer.style.width = `${availableWidth}px`;
+    gameContainer.style.height = `${calculatedHeight}px`;
+    
+    // Proportions du canvas
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    
+    // Assurer que le contenu principal ne déborde pas
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+      mainContent.style.overflowX = 'hidden';
+    }
+    
+    console.log(`Dimensions ajustées: ${availableWidth}x${calculatedHeight}`);
+  }
+}
+
+// Fonction pour vérifier si le dispositif est mobile
+function isMobileDevice() {
+  return (
+    typeof window.orientation !== 'undefined' ||
+    navigator.userAgent.indexOf('Android') !== -1 ||
+    navigator.userAgent.indexOf('iPhone') !== -1 ||
+    navigator.userAgent.indexOf('iPad') !== -1 ||
+    navigator.userAgent.indexOf('Mobile') !== -1 ||
+    window.innerWidth <= 768
+  );
+}
+
+// Initialisation
+function init() {
+  if (isMobileDevice()) {
+    optimizeMobileDisplay();
+  }
+}
+
+// Exécuter après le chargement complet de la page
+if (document.readyState === 'complete') {
+  init();
+} else {
+  window.addEventListener('load', init);
+}
+
+// Fonction utilitaire pour forcer l'optimisation mobile
+window.forceMobileOptimization = init;
+    </script>
+</body>
+</html>

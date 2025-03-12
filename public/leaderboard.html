@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PacCoin | Leaderboard</title>
+    <style>
+        /* Reset styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            color: black;
+            overflow-x: hidden;
+        }
+        
+        /* Top bar */
+        .top-bar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 5px 20px;
+            background-color: #000;
+            color: white;
+            font-size: 14px;
+        }
+        
+        .share-section, .language-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: 20px;
+        }
+        
+        .social-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Main header */
+        .main-header {
+            display: flex;
+            background: #fff;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* Logo section */
+        .logo-section {
+            display: flex;
+            align-items: center;
+            padding: 10px 0px;
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo {
+            height: 60px;
+        }
+        
+        .site-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #000;
+            margin-left: 10px;
+            text-transform: uppercase;
+        }
+        
+        /* Navigation */
+        .main-nav {
+            display: flex;
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .nav-items {
+            display: flex;
+            list-style: none;
+            height: 100%;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 90px;
+            padding: 15px;
+            text-align: center;
+            color: #000;
+            text-decoration: none;
+            font-weight: bold;
+            height: 100%;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .nav-item .icon {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 5px;
+            object-fit: contain;
+        }
+        
+        .nav-item .title {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .nav-item .subtitle {
+            font-size: 12px;
+            color: #666;
+            margin-top: 2px;
+        }
+        
+        .nav-item:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .nav-item.active {
+            color: #00a8ff;
+        }
+        
+        .nav-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: #fd0;
+        }
+        
+        /* Connect wallet button */
+        .connect-btn {
+            background-color: #fd0;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            margin-right: 20px;
+            transition: all 0.3s;
+        }
+        
+        .connect-btn:hover {
+            background-color: #ffea00;
+            transform: translateY(-2px);
+        }
+        
+        /* Main content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            min-height: 600px;
+        }
+        
+        /* Leaderboard styles */
+        .leaderboard-container {
+            width: 100%;
+            max-width: 800px;
+        }
+        
+        .leaderboard-title {
+            text-align: center;
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: #fd0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .leaderboard-table th,
+        .leaderboard-table td {
+            padding: 12px 15px;
+            text-align: left;
+        }
+        
+        .leaderboard-table th {
+            background-color: #fd0;
+            color: black;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+        
+        .leaderboard-table tr {
+            background-color: #fff;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .leaderboard-table tr:nth-child(even) {
+            background-color: #f8f8f8;
+        }
+        
+        .leaderboard-table tr:hover {
+            background-color: #f1f1f1;
+        }
+        
+        .leaderboard-table td:first-child {
+            font-weight: bold;
+            width: 60px;
+            text-align: center;
+        }
+        
+        .wallet-address {
+            font-family: monospace;
+            color: #333;
+        }
+        
+        .score {
+            font-weight: bold;
+            color: #2ecc71;
+        }
+        
+        .date {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        /* First place styling */
+        .leaderboard-table tr:nth-child(1) {
+            background-color: #fef9e3;
+        }
+        
+        .leaderboard-table tr:nth-child(1) .score {
+            color: #f39c12;
+            font-size: 18px;
+        }
+        
+        /* Second place styling */
+        .leaderboard-table tr:nth-child(2) {
+            background-color: #f9f9f9;
+        }
+        
+        /* Third place styling */
+        .leaderboard-table tr:nth-child(3) {
+            background-color: #fcf5ee;
+        }
+        
+        .trophy-icon {
+            font-size: 18px;
+            margin-right: 5px;
+        }
+        
+        /* First place trophy */
+        .rank-1 .trophy-icon {
+            color: gold;
+        }
+        
+        /* Second place trophy */
+        .rank-2 .trophy-icon {
+            color: silver;
+        }
+        
+        /* Third place trophy */
+        .rank-3 .trophy-icon {
+            color: #cd7f32; /* Bronze */
+        }
+        
+        .no-records {
+            text-align: center;
+            padding: 40px 0;
+            color: #95a5a6;
+            font-style: italic;
+        }
+        
+        .refresh-btn {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+        
+        .refresh-btn:hover {
+            background-color: #27ae60;
+            transform: translateY(-2px);
+        }
+        
+        /* User score section */
+        .user-score {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #f7f7f7;
+            border-radius: 10px;
+            width: 100%;
+            display: none; /* Initially hidden */
+        }
+        
+        .user-score-title {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .user-score-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .user-wallet {
+            font-family: monospace;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .user-best-score {
+            font-size: 24px;
+            font-weight: bold;
+            color: #fd0;
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .leaderboard-table th,
+            .leaderboard-table td {
+                padding: 8px 10px;
+                font-size: 14px;
+            }
+            
+            .wallet-address {
+                max-width: 120px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            
+            .leaderboard-title {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar with sharing options and language selector -->
+    <div class="top-bar">
+        <div class="share-section">
+            SHARE
+            <a href="#" aria-label="Facebook">
+                <svg class="social-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                </svg>
+            </a>
+            <a href="#" aria-label="Twitter">
+                <svg class="social-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path>
+                </svg>
+            </a>
+        </div>
+        <div class="language-section">
+            LANGUAGE
+            <span style="font-weight: bold">EN / JP</span>
+        </div>
+    </div>
+    
+    <!-- Main Header with Logo and Navigation -->
+    <header class="main-header">
+        <!-- Logo Section -->
+        <div class="logo-section">
+            <div class="logo-container">
+                <!-- Replace with your actual logo image -->
+                <img src="images/coin.png" alt="PacCoin Logo" class="logo">
+            </div>
+        </div>
+        
+        <!-- Main Navigation -->
+        <nav class="main-nav">
+            <ul class="nav-items">
+                <li>
+                    <a href="/" class="nav-item">
+                        <img src="https://www.pacman.com/images/common/ico_news.png" alt="Swap" class="icon">
+                        <span class="title">Swap</span>
+                        <span class="subtitle">Swap to Earn</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/" class="nav-item">
+                        <img src="https://www.pacman.com/images/common/ico_goods.png" alt="Stake" class="icon">
+                        <span class="title">Stake</span>
+                        <span class="subtitle">Stake to Earn</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/" class="nav-item">
+                        <img src="https://www.pacman.com/images/common/ico_games.png" alt="Game" class="icon">
+                        <span class="title">Game</span>
+                        <span class="subtitle">Play to Earn</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/leaderboard" class="nav-item active">
+                        <img src="https://www.pacman.com/images/common/ico_history.png" alt="Score" class="icon">
+                        <span class="title">Score</span>
+                        <span class="subtitle">Claim to Earn</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/" class="nav-item">
+                        <img src="https://www.pacman.com/images/common/ico_footer_02.png" alt="Referral" class="icon">
+                        <span class="title">Referral</span>
+                        <span class="subtitle">Refer to Earn</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        
+        <button id="connectButton" class="connect-btn">Connect</button>
+    </header>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="leaderboard-container">
+            <h1 class="leaderboard-title">PacCoin Leaderboard</h1>
+            
+            <!-- User's Own Score (shown when wallet is connected) -->
+            <div id="userScore" class="user-score">
+                <h2 class="user-score-title">Your Best Score</h2>
+                <div class="user-score-details">
+                    <div id="userWallet" class="user-wallet"></div>
+                    <div id="userBestScore" class="user-best-score">0</div>
+                </div>
+            </div>
+            
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Wallet</th>
+                        <th>Score</th>
+                        <th>Level</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboardBody">
+                    <!-- Loading message -->
+                    <tr>
+                        <td colspan="5" style="text-align: center;">Loading leaderboard data...</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <button id="refreshBtn" class="refresh-btn">Refresh Leaderboard</button>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const connectButton = document.getElementById('connectButton');
+            const userScoreSection = document.getElementById('userScore');
+            const userWalletElement = document.getElementById('userWallet');
+            const userBestScoreElement = document.getElementById('userBestScore');
+            const leaderboardBody = document.getElementById('leaderboardBody');
+            const refreshBtn = document.getElementById('refreshBtn');
+            
+            let currentWallet = null;
+            
+            // Fonction pour vérifier si Phantom est installé
+            const isPhantomInstalled = () => {
+                const provider = window?.solana;
+                return !!provider?.isPhantom;
+            };
+            
+            // Fonction pour se connecter au wallet Phantom
+            async function connectPhantomWallet() {
+                try {
+                    if (!isPhantomInstalled()) {
+                        alert("Phantom is not installed. Please install the Phantom Wallet extension to continue.");
+                        window.open("https://phantom.app/", "_blank");
+                        return null;
+                    }
+                    
+                    const resp = await window.solana.connect();
+                    const publicKey = resp.publicKey.toString();
+                    
+                    // Mettre à jour le bouton
+                    connectButton.textContent = publicKey.slice(0, 4) + '...' + publicKey.slice(-4);
+                    connectButton.style.backgroundColor = 'rgb(255, 182, 8)';
+                    
+                    // Afficher la section du score de l'utilisateur
+                    userScoreSection.style.display = 'block';
+                    userWalletElement.textContent = publicKey;
+                    
+                    // Récupérer le meilleur score de l'utilisateur
+                    getUserBestScore(publicKey);
+                    
+                    return publicKey;
+                } catch (err) {
+                    console.error("Connection error:", err);
+                    alert("Error connecting to wallet: " + err.message);
+                    return null;
+                }
+            }
+            
+            // Charger le leaderboard depuis l'API
+            async function loadLeaderboard() {
+                try {
+                    const response = await fetch('/api/leaderboard');
+                    const data = await response.json();
+                    
+                    if (data.length === 0) {
+                        leaderboardBody.innerHTML = '<tr><td colspan="5" class="no-records">No records found. Be the first to play and earn!</td></tr>';
+                        return;
+                    }
+                    
+                    let tableHTML = '';
+                    
+                    data.forEach((entry, index) => {
+                        const rank = index + 1;
+                        const rankClass = rank <= 3 ? `rank-${rank}` : '';
+                        const trophy = rank <= 3 ? `<span class="trophy-icon">${getRankIcon(rank)}</span>` : '';
+                        
+                        // Formater l'adresse du wallet pour l'affichage (premiers et derniers caractères)
+                        const formattedWallet = formatWalletAddress(entry.wallet_address);
+                        
+                        // Formater la date
+                        const formattedDate = new Date(entry.date_created).toLocaleDateString();
+                        
+                        tableHTML += `
+                            <tr class="${rankClass}">
+                                <td>${trophy}${rank}</td>
+                                <td class="wallet-address" data-wallet="${entry.wallet_address}" title="${entry.wallet_address}">${formattedWallet}</td>
+                                <td class="score">${entry.score.toLocaleString()}</td>
+                                <td>${entry.level}</td>
+                                <td class="date">${formattedDate}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    leaderboardBody.innerHTML = tableHTML;
+                    
+                } catch (error) {
+                    console.error('Error loading leaderboard:', error);
+                    leaderboardBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">Error loading leaderboard data. Please try again.</td></tr>';
+                }
+            }
+            
+            // Récupérer le meilleur score de l'utilisateur
+            async function getUserBestScore(wallet) {
+                try {
+                    const response = await fetch(`/api/leaderboard/${wallet}`);
+                    const data = await response.json();
+                    
+                    if (data && data.score) {
+                        userBestScoreElement.textContent = data.score.toLocaleString();
+                    } else {
+                        userBestScoreElement.textContent = '0';
+                    }
+                } catch (error) {
+                    console.error('Error fetching user score:', error);
+                    userBestScoreElement.textContent = 'Error';
+                }
+            }
+            
+            // Formater l'adresse du wallet (premiers et derniers caractères)
+            function formatWalletAddress(address) {
+                if (!address) return '';
+                if (address.length <= 10) return address;
+                return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+            }
+            
+            // Obtenir l'icône de classement
+            function getRankIcon(rank) {
+                switch (rank) {
+                    case 1: return '🏆'; // Trophy for 1st place
+                    case 2: return '🥈'; // Silver medal for 2nd place
+                    case 3: return '🥉'; // Bronze medal for 3rd place
+                    default: return '';
+                }
+            }
+            
+            // Événements
+            connectButton.addEventListener('click', async () => {
+                currentWallet = await connectPhantomWallet();
+            });
+            
+            refreshBtn.addEventListener('click', loadLeaderboard);
+            
+            // Charger le leaderboard au chargement de la page
+            loadLeaderboard();
+            
+            // Si déjà connecté à Phantom, mettre à jour l'interface
+            if (isPhantomInstalled() && window.solana.isConnected) {
+                connectPhantomWallet();
+            }
+        });
+
+    </script>
+        <style>
+            /* Style pour les appareils mobiles */
+    @media (max-width: 768px) {
+        /* Réorganisation du header */
+        .main-header {
+            flex-direction: column;
+            padding-bottom: 10px;
+        }
+        
+        /* Centrer le logo */
+        .logo-section {
+            width: 100%;
+            justify-content: center;
+            padding: 10px 0 5px 0;
+        }
+        
+        /* Placer le bouton connect sous le logo */
+        .main-nav2 {
+            width: 100%;
+            order: 2; /* Place le bouton connect en 2ème position */
+            justify-content: center;
+            margin: 5px 0 10px 0;
+        }
+        
+        /* Ajuster le bouton connect */
+        .connect-btn {
+            padding: 5px 15px;
+            font-size: 12px;
+            margin-right: 0; /* Enlever la marge droite */
+        }
+        
+        /* Ajuster la navigation principale */
+        .main-nav {
+            width: 100%;
+            order: 3; /* Place la navigation en 3ème position */
+        }
+        
+        /* Style pour la liste des éléments de navigation */
+        .nav-items {
+            flex-direction: row;
+            width: 100%;
+            overflow-x: auto;
+            justify-content: center;
+            padding: 5px 0;
+        }
+        
+        /* Ajuster les éléments de navigation individuels */
+        .nav-item {
+            flex-direction: column;
+            min-width: 60px;
+            padding: 8px 5px;
+            font-size: 12px;
+        }
+        
+        /* Réduire la taille des icônes */
+        .nav-item .icon, .icon2 {
+            width: 20px;
+            height: 20px;
+            margin-bottom: 3px;
+        }
+        
+        /* Ajuster la taille du texte */
+        .nav-item .title {
+            font-size: 12px;
+        }
+        
+        /* Masquer les sous-titres sur mobile */
+        .nav-item .subtitle {
+            display: none;
+        }
+    }
+
+    .game-container {
+    touch-action: none; /* Empêche les actions tactiles par défaut comme le défilement */
+}
+
+/* Facultatif : classe pour désactiver le défilement sur tout le corps lorsque le jeu est actif */
+.game-active {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+}
+        </style>
+
+        <script>
+            // Remplacez votre fonction handleKeyDown actuelle par celle-ci
+function handleKeyDown(e) {
+    // Empêcher le défilement de la page avec les flèches
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) {
+        e.preventDefault();  // Empêche le comportement par défaut (défilement)
+    }
+    
+    if (!gameStarted) {
+        gameStarted = true;
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+    
+    if (gameOver) {
+        resetGame();
+        return;
+    }
+    
+    switch(e.key) {
+        case 'ArrowUp':
+            pacman.nextDirection = UP;
+            break;
+        case 'ArrowRight':
+            pacman.nextDirection = RIGHT;
+            break;
+        case 'ArrowDown':
+            pacman.nextDirection = DOWN;
+            break;
+        case 'ArrowLeft':
+            pacman.nextDirection = LEFT;
+            break;
+    }
+}
+        </script>
+</body>
+</html>
