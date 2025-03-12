@@ -1185,7 +1185,7 @@ function checkGameInitialization() {
             // Solution très simplifiée pour le tunnel
 // Fonction movePacMan avec débogage complet
 // Solution ultra-simplifiée pour le tunnel
-function movePacMan() {
+function movePacMan(speedFactor = 1) {
     if (!pacman.alive) return;
     
     // Vérifier si Pac-Man peut changer de direction
@@ -1199,18 +1199,21 @@ function movePacMan() {
     let newX = pacman.x;
     let newY = pacman.y;
     
+    // Appliquer le facteur de vitesse
+    const adjustedSpeed = pacman.speed * speedFactor;
+    
     switch(pacman.direction) {
         case UP:
-            newY -= pacman.speed;
+            newY -= adjustedSpeed;
             break;
         case RIGHT:
-            newX += pacman.speed;
+            newX += adjustedSpeed;
             break;
         case DOWN:
-            newY += pacman.speed;
+            newY += adjustedSpeed;
             break;
         case LEFT:
-            newX -= pacman.speed;
+            newX -= adjustedSpeed;
             break;
     }
     
@@ -1219,15 +1222,15 @@ function movePacMan() {
     if (Math.floor(pacman.y / CELL_SIZE) === 14) {
         // Vérifier les sorties à droite ou à gauche (indépendamment de la direction)
         if (newX < 0) {
-            pacman.x = canvas.width - pacman.speed;
-            updatePacmanMouth();
+            pacman.x = canvas.width - adjustedSpeed;
+            updatePacmanMouth(speedFactor);
             checkCollisions();
             return;
         }
         
         if (newX > canvas.width) {
-            pacman.x = pacman.speed;
-            updatePacmanMouth();
+            pacman.x = adjustedSpeed;
+            updatePacmanMouth(speedFactor);
             checkCollisions();
             return;
         }
@@ -1245,7 +1248,7 @@ function movePacMan() {
     }
     
     // Animation de la bouche
-    updatePacmanMouth();
+    updatePacmanMouth(speedFactor);
     
     // Vérification des collisions
     checkCollisions();
@@ -1255,8 +1258,9 @@ function movePacMan() {
 
 
 // Fonction auxiliaire pour l'animation de la bouche
-function updatePacmanMouth() {
-    pacman.mouthOpen += 0.1 * pacman.mouthDir;
+function updatePacmanMouth(speedFactor = 1) {
+    // Ajuster la vitesse d'animation en fonction du speedFactor
+    pacman.mouthOpen += 0.1 * pacman.mouthDir * speedFactor;
     if (pacman.mouthOpen >= 0.5) {
         pacman.mouthDir = -1;
     } else if (pacman.mouthOpen <= 0) {
@@ -1267,192 +1271,202 @@ function updatePacmanMouth() {
 
             
             // Move ghosts
-            function moveGhosts() {
-                ghosts.forEach(ghost => {
-                    // If ghost is in box, handle release timer
-                    if (ghost.inBox) {
-                        ghost.releaseTimer--;
-                        if (ghost.releaseTimer <= 0) {
-                            ghost.inBox = false;
-                            ghost.y = 11 * CELL_SIZE; // Position at ghost house exit
-                        } else {
-                            // Bounce up and down in ghost house
-                            ghost.y += Math.sin(Date.now() / 200) * 0.5;
-                            return;
-                        }
-                    }
+            // Fonction moveGhosts optimisée avec un facteur de vitesse
+function moveGhosts(speedFactor = 1) {
+    ghosts.forEach(ghost => {
+        // Si le fantôme est dans la boîte, gérer le minuteur de libération
+        if (ghost.inBox) {
+            ghost.releaseTimer -= speedFactor; // Utiliser speedFactor ici
+            if (ghost.releaseTimer <= 0) {
+                ghost.inBox = false;
+                ghost.y = 11 * CELL_SIZE; // Position à la sortie de la maison des fantômes
+            } else {
+                // Mouvement de rebond dans la maison des fantômes
+                ghost.y += Math.sin(Date.now() / 200) * 0.5 * speedFactor;
+                return;
+            }
+        }
+        
+        // Si le fantôme a été mangé, retourner à la maison des fantômes
+        if (ghost.eaten) {
+            // Se déplacer vers la maison des fantômes
+            const homeX = 13.5 * CELL_SIZE;
+            const homeY = 14 * CELL_SIZE;
+            
+            // Calculer la direction vers la maison
+            const dx = homeX - ghost.x;
+            const dy = homeY - ghost.y;
+            
+            if (Math.abs(dx) < 8 && Math.abs(dy) < 8) {
+                ghost.x = ghost.homeX;
+                ghost.y = ghost.homeY;
+                ghost.eaten = false;
+                ghost.inBox = true;
+                ghost.releaseTimer = ghostRespawnTime; // 2 secondes
+                return;
+            }
+            
+            // Appliquer le facteur de vitesse pour les fantômes mangés (plus rapide)
+            const adjustedSpeed = ghost.speed * speedFactor * 2;
+            
+            // Se déplacer vers la maison
+            ghost.x += Math.sign(dx) * adjustedSpeed;
+            ghost.y += Math.sign(dy) * adjustedSpeed;
+            return;
+        }
+        
+        // Mouvement normal du fantôme
+        let possibleDirections = [];
+        const oppositeDirection = (ghost.direction + 2) % 4;
+        
+        // Vérifier les quatre directions
+        for (let dir = 0; dir < 4; dir++) {
+            if (dir !== oppositeDirection && canMove(ghost.x, ghost.y, dir)) {
+                possibleDirections.push(dir);
+            }
+        }
+        
+        // Si à une intersection ou forcé de tourner
+        if (possibleDirections.length > 0 && 
+            (possibleDirections.length > 1 || !canMove(ghost.x, ghost.y, ghost.direction))) {
+            
+            if (!ghost.frightened) {
+                // Ciblage basé sur le comportement du fantôme
+                let targetX, targetY;
+                
+                if (ghost.index === 0) { // Fantôme rouge (Blinky) - poursuit Pac-Man directement
+                    targetX = pacman.x;
+                    targetY = pacman.y;
+                } else if (ghost.index === 1) { // Fantôme rose (Pinky) - cible 4 cellules devant Pac-Man
+                    targetX = pacman.x;
+                    targetY = pacman.y;
                     
-                    // If ghost is eaten, return to ghost house
-                    if (ghost.eaten) {
-                        // Move towards ghost house
-                        const homeX = 13.5 * CELL_SIZE;
-                        const homeY = 14 * CELL_SIZE;
-                        
-                        // Calculate direction to home
-                        const dx = homeX - ghost.x;
-                        const dy = homeY - ghost.y;
-                        
-                        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) {
-                            ghost.x = ghost.homeX;
-                            ghost.y = ghost.homeY;
-                            ghost.eaten = false;
-                            ghost.inBox = true;
-                            ghost.releaseTimer = ghostRespawnTime; // 2 seconds
-                            return;
-                        }
-                        
-                        // Move towards home
-                        ghost.x += Math.sign(dx) * ghost.speed * 2;
-                        ghost.y += Math.sign(dy) * ghost.speed * 2;
-                        return;
-                    }
-                    
-                    // Regular ghost movement
-                    let possibleDirections = [];
-                    const oppositeDirection = (ghost.direction + 2) % 4;
-                    
-                    // Check all four directions
-                    for (let dir = 0; dir < 4; dir++) {
-                        if (dir !== oppositeDirection && canMove(ghost.x, ghost.y, dir)) {
-                            possibleDirections.push(dir);
-                        }
-                    }
-                    
-                    // If at intersection or forced to turn
-                    if (possibleDirections.length > 0 && 
-                        (possibleDirections.length > 1 || !canMove(ghost.x, ghost.y, ghost.direction))) {
-                        
-                        if (!ghost.frightened) {
-                            // Target based on ghost behavior
-                            let targetX, targetY;
-                            
-                            if (ghost.index === 0) { // Red ghost (Blinky) - chase Pac-Man directly
-                                targetX = pacman.x;
-                                targetY = pacman.y;
-                            } else if (ghost.index === 1) { // Pink ghost (Pinky) - target 4 cells ahead of Pac-Man
-                                targetX = pacman.x;
-                                targetY = pacman.y;
-                                
-                                switch(pacman.direction) {
-                                    case UP:
-                                        targetY -= 4 * CELL_SIZE;
-                                        break;
-                                    case RIGHT:
-                                        targetX += 4 * CELL_SIZE;
-                                        break;
-                                    case DOWN:
-                                        targetY += 4 * CELL_SIZE;
-                                        break;
-                                    case LEFT:
-                                        targetX -= 4 * CELL_SIZE;
-                                        break;
-                                }
-                            } else if (ghost.index === 2) { // Cyan ghost (Inky) - complex targeting
-                                // Position relative to Blinky and Pac-Man
-                                const blinky = ghosts[0];
-                                
-                                // Get position 2 tiles ahead of Pac-Man
-                                let aheadX = pacman.x;
-                                let aheadY = pacman.y;
-                                
-                                switch(pacman.direction) {
-                                    case UP:
-                                        aheadY -= 2 * CELL_SIZE;
-                                        break;
-                                    case RIGHT:
-                                        aheadX += 2 * CELL_SIZE;
-                                        break;
-                                    case DOWN:
-                                        aheadY += 2 * CELL_SIZE;
-                                        break;
-                                    case LEFT:
-                                        aheadX -= 2 * CELL_SIZE;
-                                        break;
-                                }
-                                
-                                // Vector from Blinky to the position ahead of Pac-Man
-                                let vectorX = aheadX - blinky.x;
-                                let vectorY = aheadY - blinky.y;
-                                
-                                // Double the vector
-                                targetX = blinky.x + vectorX * 2;
-                                targetY = blinky.y + vectorY * 2;
-                                
-                            } else { // Orange ghost (Clyde) - chase or retreat
-                                const distToPacman = Math.hypot(ghost.x - pacman.x, ghost.y - pacman.y);
-                                
-                                if (distToPacman > 8 * CELL_SIZE) {
-                                    // Chase mode - target Pac-Man
-                                    targetX = pacman.x;
-                                    targetY = pacman.y;
-                                } else {
-                                    // Scatter mode - go to bottom-left corner
-                                    targetX = 0;
-                                    targetY = canvas.height;
-                                }
-                            }
-                            
-                            // Find the direction that gets closest to the target
-                            let bestDirection = possibleDirections[0];
-                            let bestDistance = Infinity;
-                            
-                            possibleDirections.forEach(dir => {
-                                let nextX = ghost.x;
-                                let nextY = ghost.y;
-                                
-                                switch(dir) {
-                                    case UP:
-                                        nextY -= CELL_SIZE;
-                                        break;
-                                    case RIGHT:
-                                        nextX += CELL_SIZE;
-                                        break;
-                                    case DOWN:
-                                        nextY += CELL_SIZE;
-                                        break;
-                                    case LEFT:
-                                        nextX -= CELL_SIZE;
-                                        break;
-                                }
-                                
-                                const distance = Math.hypot(nextX - targetX, nextY - targetY);
-                                if (distance < bestDistance) {
-                                    bestDistance = distance;
-                                    bestDirection = dir;
-                                }
-                            });
-                            
-                            ghost.direction = bestDirection;
-                        } else {
-                            // Frightened mode - random movement
-                            ghost.direction = possibleDirections[Math.floor(Math.random() * possibleDirections.length)];
-                        }
-                    }
-                    
-                    // Move ghost
-                    switch(ghost.direction) {
+                    switch(pacman.direction) {
                         case UP:
-                            ghost.y -= ghost.speed * (ghost.frightened ? 0.5 : 1);
+                            targetY -= 4 * CELL_SIZE;
                             break;
                         case RIGHT:
-                            ghost.x += ghost.speed * (ghost.frightened ? 0.5 : 1);
+                            targetX += 4 * CELL_SIZE;
                             break;
                         case DOWN:
-                            ghost.y += ghost.speed * (ghost.frightened ? 0.5 : 1);
+                            targetY += 4 * CELL_SIZE;
                             break;
                         case LEFT:
-                            ghost.x -= ghost.speed * (ghost.frightened ? 0.5 : 1);
+                            targetX -= 4 * CELL_SIZE;
+                            break;
+                    }
+                } else if (ghost.index === 2) { // Fantôme cyan (Inky) - ciblage complexe
+                    // Position relative à Blinky et Pac-Man
+                    const blinky = ghosts[0];
+                    
+                    // Obtenir la position 2 tuiles devant Pac-Man
+                    let aheadX = pacman.x;
+                    let aheadY = pacman.y;
+                    
+                    switch(pacman.direction) {
+                        case UP:
+                            aheadY -= 2 * CELL_SIZE;
+                            break;
+                        case RIGHT:
+                            aheadX += 2 * CELL_SIZE;
+                            break;
+                        case DOWN:
+                            aheadY += 2 * CELL_SIZE;
+                            break;
+                        case LEFT:
+                            aheadX -= 2 * CELL_SIZE;
                             break;
                     }
                     
-                    // Check for tunnel wrap
-                    if (ghost.x < 0) {
-                        ghost.x = canvas.width;
-                    } else if (ghost.x > canvas.width) {
-                        ghost.x = 0;
+                    // Vecteur de Blinky à la position devant Pac-Man
+                    let vectorX = aheadX - blinky.x;
+                    let vectorY = aheadY - blinky.y;
+                    
+                    // Doubler le vecteur
+                    targetX = blinky.x + vectorX * 2;
+                    targetY = blinky.y + vectorY * 2;
+                    
+                } else { // Fantôme orange (Clyde) - poursuite ou retraite
+                    const distToPacman = Math.hypot(ghost.x - pacman.x, ghost.y - pacman.y);
+                    
+                    if (distToPacman > 8 * CELL_SIZE) {
+                        // Mode poursuite - cibler Pac-Man
+                        targetX = pacman.x;
+                        targetY = pacman.y;
+                    } else {
+                        // Mode dispersion - aller au coin inférieur gauche
+                        targetX = 0;
+                        targetY = canvas.height;
+                    }
+                }
+                
+                // Trouver la direction qui se rapproche le plus de la cible
+                let bestDirection = possibleDirections[0];
+                let bestDistance = Infinity;
+                
+                possibleDirections.forEach(dir => {
+                    let nextX = ghost.x;
+                    let nextY = ghost.y;
+                    
+                    switch(dir) {
+                        case UP:
+                            nextY -= CELL_SIZE;
+                            break;
+                        case RIGHT:
+                            nextX += CELL_SIZE;
+                            break;
+                        case DOWN:
+                            nextY += CELL_SIZE;
+                            break;
+                        case LEFT:
+                            nextX -= CELL_SIZE;
+                            break;
+                    }
+                    
+                    const distance = Math.hypot(nextX - targetX, nextY - targetY);
+                    if (distance < bestDistance) {
+                        bestDistance = distance;
+                        bestDirection = dir;
                     }
                 });
+                
+                ghost.direction = bestDirection;
+            } else {
+                // Mode effrayé - mouvement aléatoire
+                ghost.direction = possibleDirections[Math.floor(Math.random() * possibleDirections.length)];
             }
+        }
+        
+        // Appliquer le facteur de vitesse
+        const frightenedMultiplier = ghost.frightened ? 0.5 : 1;
+        const adjustedSpeed = ghost.speed * frightenedMultiplier * speedFactor;
+        
+        // Déplacer le fantôme
+        switch(ghost.direction) {
+            case UP:
+                ghost.y -= adjustedSpeed;
+                break;
+            case RIGHT:
+                ghost.x += adjustedSpeed;
+                break;
+            case DOWN:
+                ghost.y += adjustedSpeed;
+                break;
+            case LEFT:
+                ghost.x -= adjustedSpeed;
+                break;
+        }
+        
+        // Vérifier le passage par le tunnel
+        if (Math.floor(ghost.y / CELL_SIZE) === 14) { // Même ligne que le tunnel
+            if (ghost.x < 0) {
+                ghost.x = canvas.width;
+            } else if (ghost.x > canvas.width) {
+                ghost.x = 0;
+            }
+        }
+    });
+}
             
             function checkCollisions() {
     const gridX = Math.floor(pacman.x / CELL_SIZE);
@@ -1720,23 +1734,24 @@ let ghostRespawnTime = 120;
             
             // Draw Pac-Man death animation
             function drawPacManDeath() {
-                ctx.save();
-                ctx.translate(pacman.x, pacman.y);
-                
-                // Death animation progress (0 to 1)
-                pacman.deathFrame += 0.01;
-                const progress = Math.min(pacman.deathFrame, 1);
-                
-                // Draw disappearing Pac-Man
-                ctx.fillStyle = PACMAN_COLOR;
-                ctx.beginPath();
-                ctx.arc(0, 0, pacman.radius, (progress * Math.PI), (2 - progress) * Math.PI);
-                ctx.lineTo(0, 0);
-                ctx.fill();
-                
-                ctx.restore();
-            }
-            
+    ctx.save();
+    ctx.translate(pacman.x, pacman.y);
+    
+    // Ajustez l'incrément en fonction du taux d'images
+    const frameTimeRatio = 1/60; // Approximation du temps de frame idéal
+    pacman.deathFrame += 0.01 * (targetFrameTime * frameTimeRatio);
+    
+    const progress = Math.min(pacman.deathFrame, 1);
+    
+    // Draw disappearing Pac-Man
+    ctx.fillStyle = PACMAN_COLOR;
+    ctx.beginPath();
+    ctx.arc(0, 0, pacman.radius, (progress * Math.PI), (2 - progress) * Math.PI);
+    ctx.lineTo(0, 0);
+    ctx.fill();
+    
+    ctx.restore();
+}
             // Draw ghosts
             function drawGhosts() {
                 ghosts.forEach(ghost => {
@@ -2209,41 +2224,58 @@ function drawGameOverScreen() {
         }, 500);
     }
 }
+let lastTimestamp = 0;
+const FPS = 60; // Cible de 60 FPS
+const targetFrameTime = 1000 / FPS; 
             // Game loop
             function gameLoop(timestamp) {
-                if (!gameStarted || gameOver) {
-                    if (gameOver) {
-                        drawGameOverScreen();
-                    }
-                    requestAnimationFrame(gameLoop);
-                    return;
+    // Calculer le deltaTime (temps écoulé depuis la dernière frame)
+    if (!lastTimestamp) lastTimestamp = timestamp;
+    const deltaTime = timestamp - lastTimestamp;
+    
+    // Si le temps écoulé est trop court, attendez jusqu'à la prochaine frame
+    if (deltaTime < targetFrameTime - 1) {
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+    
+    // Calculer le facteur de vitesse pour compenser les différences de performance
+    const speedFactor = deltaTime / targetFrameTime;
+    lastTimestamp = timestamp;
+    
+    if (!gameStarted || gameOver) {
+        if (gameOver) {
+            drawGameOverScreen();
+        }
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+    
+    // Update powerup timer
+    if (powerupActive) {
+        powerupTimer -= speedFactor; // Utiliser speedFactor ici
+        if (powerupTimer <= 0) {
+            powerupActive = false;
+            ghosts.forEach(ghost => {
+                if (!ghost.eaten) {
+                    ghost.frightened = false;
                 }
-                
-                // Update powerup timer
-                if (powerupActive) {
-                    powerupTimer--;
-                    if (powerupTimer <= 0) {
-                        powerupActive = false;
-                        ghosts.forEach(ghost => {
-                            if (!ghost.eaten) {
-                                ghost.frightened = false;
-                            }
-                        });
-                    }
-                }
-                
-                // Move characters
-                if (pacman.alive) {
-                    movePacMan();
-                    moveGhosts();
-                }
-                
-                // Draw everything
-                draw();
-                
-                // Continue the game loop
-                requestAnimationFrame(gameLoop);
-            }
+            });
+        }
+    }
+    
+    // Move characters with adjusted speed
+    if (pacman.alive) {
+        movePacMan(speedFactor); // Passer speedFactor en paramètre
+        moveGhosts(speedFactor); // Passer speedFactor en paramètre
+    }
+    
+    // Draw everything
+    draw();
+    
+    // Continue the game loop
+    requestAnimationFrame(gameLoop);
+}
             
             // Contract address copy functionality
             document.querySelector('.contract-address').addEventListener('click', function() {
@@ -2560,7 +2592,7 @@ async function connectPhantomWallet() {
             }
             
             // Demander la connexion au wallet
-            console.log("Tentative de connexion au wallet...");
+            console.log("Play to win PacCoins! Your score will be recorded automatically.");
             const resp = await window.solana.connect();
             const publicKey = resp.publicKey.toString();
             
@@ -2576,7 +2608,7 @@ async function connectPhantomWallet() {
             // Mettre à jour le message du jeu
             const messageElement = document.querySelector('.message');
             if (messageElement) {
-                messageElement.textContent = "Jouez pour gagner des PacCoins! Votre score sera enregistré automatiquement.";
+                messageElement.textContent = "Play to win PacCoins! Your score will be recorded automatically.";
             }
             
             // Récupérer le meilleur score du joueur depuis le serveur
@@ -2611,7 +2643,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Mettre à jour le message du jeu
             const messageElement = document.querySelector('.message');
             if (messageElement) {
-                messageElement.textContent = "Jouez pour gagner des PacCoins! Votre score sera enregistré automatiquement.";
+                messageElement.textContent = "Play to earn PacCoins! Your score will be recorded automatically.";
             }
             
             // Récupérer le meilleur score si possible
