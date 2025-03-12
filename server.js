@@ -14,7 +14,7 @@ app.use(express.static('public'));
 
 // Initialiser la base de données SQLite
 const dbPath = path.resolve(__dirname, 'pacCoinLeaderboard.db');
-const db = new sqlite3.Database(dbPath, (err) => {
+const db = new sqlite3.Database(':memory:', (err) => {
   if (err) {
     return console.error('Erreur lors de la connexion à la base de données:', err.message);
   }
